@@ -36,7 +36,7 @@ def setup():
     if not _directories_exist():
         _push_key()
         _verify_sudo
-        _install_dependencies()
+        #_install_dependencies() // nao instala so packs
         _create_django_user()
         _setup_directories()
 
