@@ -300,7 +300,7 @@ def test_configuration(verbose=True):
 
 def _create_django_user():
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
-        res = sudo('useradd -d %(django_user_home)s -r %(django_user)s -s /bin/bash' % env)
+        res = sudo('useradd -d %(django_user_home)s -m -r %(django_user)s -s /bin/bash' % env)
     if 'already exists' in res:
         puts('User \'%(django_user)s\' already exists, will not be changed.' % env)
         return
@@ -360,6 +360,7 @@ def _create_virtualenv():
 
 def _setup_directories():
     sudo('mkdir -p %(projects_path)s' % env)
+    sudo('chown %(django_user)s %(projects_path)s' % env)
     # sudo('mkdir -p %(django_user_home)s/logs/nginx' % env)  # Not used
     # prepare gunicorn_logfile directory
     sudo('mkdir -p %s' % dirname(env.gunicorn_logfile))
