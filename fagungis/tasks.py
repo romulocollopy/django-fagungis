@@ -121,7 +121,7 @@ def hg_pull():
 @task
 def git_pull():
     with cd(env.code_root):
-        sudo('git pull -u')
+        sudo('git pull -u', user=env.django_user)
 
 @task
 def test_configuration(verbose=True):
@@ -300,7 +300,7 @@ def test_configuration(verbose=True):
 
 def _create_django_user():
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
-        res = sudo('useradd -d %(django_user_home)s -m -r %(django_user)s' % env)
+        res = sudo('useradd -d %(django_user_home)s -r %(django_user)s -s /bin/bash' % env)
     if 'already exists' in res:
         puts('User \'%(django_user)s\' already exists, will not be changed.' % env)
         return
@@ -420,7 +420,7 @@ def _hg_clone():
     sudo('hg clone %s %s' % (env.repository, env.code_root))
 
 def _git_clone():
-    sudo('git clone %s %s' % (env.repository, env.code_root))
+    sudo('git clone %s %s' % (env.repository, env.code_root),  user=env.django_user)
 
 def _test_nginx_conf():
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
