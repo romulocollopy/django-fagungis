@@ -455,8 +455,9 @@ def _upload_nginx_conf():
 
 
 def _reload_supervisorctl():
-    sudo('%(supervisorctl)s reread' % env)
-    sudo('%(supervisorctl)s reload' % env)
+    #sudo('%(supervisorctl)s reread' % env)
+    sudo('%(supervisorctl)s update' % env)
+    #sudo('%(supervisorctl)s reload' % env) # desnecessario reload, e leva mais tempo
 
 
 def _upload_supervisord_conf():
