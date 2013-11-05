@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from copy import copy
 from datetime import datetime
 from os.path import basename, abspath, dirname, isfile, join, expanduser
@@ -15,13 +16,11 @@ red_bg = _wrap_with('41')
 fagungis_path = dirname(abspath(__file__))
 
 
-##########################
-## START Fagungis tasks ##
-##########################
-
-
 @task
-def setup():
+def setup(new_server=True):
+    '''
+    SETUP
+    '''
     #  test configuration start
     if not test_configuration():
         if not console.confirm("Configuration test %s! Do you want to continue?" % red_bg('failed'), default=False):
@@ -36,9 +35,10 @@ def setup():
     if not _directories_exist():
         _push_key()
         _verify_sudo
-        #_install_dependencies() // nao instala so packs
-        _create_django_user()
-        _setup_directories()
+        if new_server:
+            _install_dependencies() // nao instala so packs
+            _create_django_user()
+            _setup_directories()
 
     _setup_project_directories()
     if env.repository_type == 'hg':
@@ -60,7 +60,7 @@ def setup():
 
 
 @task
-def deploy():
+def deploy(new_apps=True, new_server_conf=True):
     #  test configuration start
     if not test_configuration():
         if not console.confirm("Configuration test %s! Do you want to continue?" % red_bg('failed'), default=False):
@@ -77,18 +77,21 @@ def deploy():
         hg_pull()
     else:
         git_pull()
-    _install_requirements()
-    _upload_nginx_conf()
-    _upload_rungunicorn_script()
-    _upload_supervisord_conf()
+    if new_apps:
+        _install_requirements()
+    if new_server_conf:
+        _upload_nginx_conf()
+        _upload_rungunicorn_script()
+        _upload_supervisord_conf()
     _prepare_django_project()
-    _prepare_media_path()
+    _prepare_media_path() # fica porque pode ser alterado em uma review de código
     _supervisor_restart()
 
     end_time = datetime.now()
     finish_message = '[%s] Correctly deployed in %i seconds' % \
     (green_bg(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
     puts(finish_message)
+
 
 @task
 def remove():
@@ -122,6 +125,7 @@ def hg_pull():
 def git_pull():
     with cd(env.code_root):
         sudo('git pull -u', user=env.django_user)
+
 
 @task
 def test_configuration(verbose=True):
