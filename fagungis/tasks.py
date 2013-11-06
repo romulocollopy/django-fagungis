@@ -36,8 +36,11 @@ def setup(new_server=True):
         _push_key()
         _verify_sudo
         if new_server:
-            _install_dependencies() // nao instala so packs
+            puts(green_bg('Dependecies'))
+            _install_dependencies()  # nao instala so packs
+
             _create_django_user()
+            puts(green_bg('Django user created'))
             _setup_directories()
 
     _setup_project_directories()
@@ -365,7 +368,7 @@ def _create_virtualenv():
 def _setup_directories():
     sudo('mkdir -p %(projects_path)s' % env)
     sudo('chown -R %(django_user)s %(projects_path)s ' % env)
-    # sudo('mkdir -p %(django_user_home)s/logs/nginx' % env)  # Not used
+    #sudo('mkdir -p %(django_user_home)s/logs/nginx' % env)  # Not used
     # prepare gunicorn_logfile directory
     sudo('mkdir -p %s' % dirname(env.gunicorn_logfile))
     sudo('chown %s %s' % (env.django_user, dirname(env.gunicorn_logfile)))
@@ -413,12 +416,12 @@ def _remove_project_files():
 
 def virtenvrun(command):
     activate = 'source %s/bin/activate' % env.virtenv
-    run(activate + ' && ' + command)
+    run(activate + ' && ' + command, )
 
 
 def virtenvsudo(command):
     activate = 'source %s/bin/activate' % env.virtenv
-    sudo(activate + ' && ' + command)
+    sudo(activate + ' && ' + command, user=env.django_user)
 
 
 def _hg_clone():
@@ -454,6 +457,7 @@ def _upload_nginx_conf():
                     context=context, backup=False, use_sudo=True)
 
     sudo('ln -sf %s /etc/nginx/sites-enabled/%s' % (env.nginx_conf_file, basename(env.nginx_conf_file)))
+    sudo('ln -sf %s /etc/nginx/sites-available/%s' % (env.nginx_conf_file, basename(env.nginx_conf_file)))
     _test_nginx_conf()
     _reload_nginx()
 
@@ -479,7 +483,7 @@ def _upload_supervisord_conf():
 
 def _prepare_django_project():
     with cd(env.django_project_root):
-        virtenvrun('python manage.py syncdb --noinput --verbosity=1')
+        virtenvsudo('python manage.py syncdb --noinput --verbosity=1')
         if env.south_used:
             virtenvrun('python manage.py migrate --noinput --verbosity=1')
         virtenvsudo('python manage.py collectstatic --noinput')
