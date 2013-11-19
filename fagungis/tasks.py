@@ -436,7 +436,7 @@ def _hg_clone():
 def _git_clone():
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         cd(env.code_root)
-        sudo('git pull' % env, user=env.django_user)
+        res = sudo('git pull' % env, user=env.django_user)
     if 'failed' in res:
         sudo('git clone %(repository)s %(code_root)s' % env, user=env.django_user)
 
