@@ -434,7 +434,11 @@ def _hg_clone():
 
 
 def _git_clone():
-    sudo('git pull %(repo)s %(root)s || git clone %(repo)s %(root)s' % {'repo': env.repository, 'root': env.code_root}, user=env.django_user)
+    with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
+        with cd(env.code_root):
+            sudo('git pull' % env, user=env.django_user)
+    if 'failed' in res:
+        sudo('git clone %(repository)s %(code_root)s' % env, user=env.django_user)
 
 
 def _test_nginx_conf():
