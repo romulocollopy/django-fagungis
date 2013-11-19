@@ -128,9 +128,12 @@ def hg_pull():
 @task
 def git_pull():
     with cd(env.code_root):
-        sudo('git pull -u', user=env.django_user)
-        if 'branch' in env:
-            sudo('git checkout -b %(branch)s || git checkout %(branch)s' % {'branch': env.branch}, user=env.django_user)
+        branch = env.get('branch', 'master')
+        with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
+            res = sudo('git checkout -b %(branch)s' % {'branch': branch}, user=env.django_user)
+        if 'failed' in res:
+            sudo('git checkout %(branch)s' % {'branch': branch}, user=env.django_user)
+        sudo('git pull origin %(branch)s'% {'branch': branch}, user=env.django_user)
 
 
 @task
