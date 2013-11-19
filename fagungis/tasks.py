@@ -442,8 +442,8 @@ def _git_clone():
     if 'failed' in res:
         sudo('git clone %(repository)s %(code_root)s' % env, user=env.django_user)
     with cd(env.code_root):
-        sudo('git config --global user.email "you@example.com"', user=env.django_user)
-        sudo('git config --global user.name "Your Name"', user=env.django_user)
+        sudo('git config --global user.email you@example.com', user=env.django_user)
+        sudo('git config --global user.name foo', user=env.django_user)
 
 
 def _test_nginx_conf():
