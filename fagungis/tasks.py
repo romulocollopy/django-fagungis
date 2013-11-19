@@ -128,12 +128,11 @@ def hg_pull():
 @task
 def git_pull():
     with cd(env.code_root):
-        branch = env.get('branch', 'master')
         with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
-            res = sudo('git checkout -b %(branch)s' % {'branch': branch}, user=env.django_user)
+            res = sudo('git checkout -b %(branch)s' % env, user=env.django_user)
         if 'failed' in res:
-            sudo('git checkout %(branch)s' % {'branch': branch}, user=env.django_user)
-        sudo('git pull origin %(branch)s'% {'branch': branch}, user=env.django_user)
+            sudo('git checkout %(branch)s' % env, user=env.django_user)
+        sudo('git pull origin %(branch)s' % env, user=env.django_user)
 
 
 @task
@@ -439,9 +438,12 @@ def _hg_clone():
 def _git_clone():
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         with cd(env.code_root):
-            res = sudo('git pull' % env, user=env.django_user)
+            res = sudo('git pull origin %(branch)s' % env, user=env.django_user)
     if 'failed' in res:
         sudo('git clone %(repository)s %(code_root)s' % env, user=env.django_user)
+    with cd(env.code_root):
+        sudo('git config --global user.email "you@example.com"', user=env.django_user)
+        sudo('git config --global user.name "Your Name"', user=env.django_user)
 
 
 def _test_nginx_conf():
