@@ -34,7 +34,7 @@ def setup(new_server=True):
 
     if not _directories_exist():
         _push_key()
-        _verify_sudo
+        _verify_sudo()
         if new_server:
             puts(green_bg('Dependecies'))
             _install_dependencies()  # nao instala so packs
@@ -372,7 +372,7 @@ def _create_virtualenv():
 
 def _setup_directories():
     sudo('mkdir -p %(projects_path)s' % env)
-    sudo('chown -R %(django_user)s %(projects_path)s ' % env)
+    sudo('chown -R %(django_user_home)s ' % env)
     #sudo('mkdir -p %(django_user_home)s/logs/nginx' % env)  # Not used
     # prepare gunicorn_logfile directory
     sudo('mkdir -p %s' % dirname(env.gunicorn_logfile))
