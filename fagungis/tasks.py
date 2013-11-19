@@ -25,7 +25,7 @@ def setup(new_server=True):
     if not test_configuration():
         if not console.confirm("Configuration test %s! Do you want to continue?" % red_bg('failed'), default=False):
             abort("Aborting at user request.")
-    #  test configuration end
+            #  test configuration end
     if env.ask_confirmation:
         if not console.confirm("Are you sure you want to setup %s?" % red_bg(env.project.upper()), default=False):
             abort("Aborting at user request.")
@@ -58,7 +58,7 @@ def setup(new_server=True):
 
     end_time = datetime.now()
     finish_message = '[%s] Correctly finished in %i seconds' % \
-    (green_bg(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
+                     (green_bg(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
     puts(finish_message)
 
 
@@ -68,7 +68,7 @@ def deploy(new_apps=True, new_server_conf=True):
     if not test_configuration():
         if not console.confirm("Configuration test %s! Do you want to continue?" % red_bg('failed'), default=False):
             abort("Aborting at user request.")
-    #  test configuration end
+            #  test configuration end
     _verify_sudo()
     if env.ask_confirmation:
         if not console.confirm("Are you sure you want to deploy in %s?" % red_bg(env.project.upper()), default=False):
@@ -92,7 +92,7 @@ def deploy(new_apps=True, new_server_conf=True):
 
     end_time = datetime.now()
     finish_message = '[%s] Correctly deployed in %i seconds' % \
-    (green_bg(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
+                     (green_bg(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
     puts(finish_message)
 
 
@@ -102,7 +102,7 @@ def remove():
     if not test_configuration():
         if not console.confirm("Configuration test %s! Do you want to continue?" % red_bg('failed'), default=False):
             abort("Aborting at user request.")
-    #  test configuration end
+            #  test configuration end
     if env.ask_confirmation:
         if not console.confirm("Are you sure you want to remove %s?" % red_bg(env.project.upper()), default=False):
             abort("Aborting at user request.")
@@ -115,7 +115,7 @@ def remove():
 
     end_time = datetime.now()
     finish_message = '[%s] Correctly finished in %i seconds' % \
-    (green_bg(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
+                     (green_bg(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
     puts(finish_message)
 
 
@@ -124,10 +124,13 @@ def hg_pull():
     with cd(env.code_root):
         sudo('hg pull -u')
 
+
 @task
 def git_pull():
     with cd(env.code_root):
         sudo('git pull -u', user=env.django_user)
+        if 'branch' in env:
+            sudo('git checkout -b %(branch)s || git checkout %(branch)s' % {'branch': env.branch}, user=env.django_user)
 
 
 @task
@@ -142,6 +145,8 @@ def test_configuration(verbose=True):
         errors.append('Repository url missing')
     elif verbose:
         parameters_info.append(('Repository url', env.repository))
+    if 'branch' in env:
+        parameters_info.append(('Project Branch', env.branch))
     if 'hosts' not in env or not env.hosts:
         errors.append('Hosts configuration missing')
     elif verbose:
@@ -311,7 +316,7 @@ def _create_django_user():
     if 'already exists' in res:
         puts('User \'%(django_user)s\' already exists, will not be changed.' % env)
         return
-    #  set password
+        #  set password
     sudo('passwd %(django_user)s' % env)
 
 
@@ -429,7 +434,7 @@ def _hg_clone():
 
 
 def _git_clone():
-    sudo('git clone %s %s' % (env.repository, env.code_root),  user=env.django_user)
+    sudo('git clone %s %s' % (env.repository, env.code_root), user=env.django_user)
 
 
 def _test_nginx_conf():
