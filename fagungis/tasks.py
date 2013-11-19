@@ -421,14 +421,16 @@ def virtenvrun(command):
 
 def virtenvsudo(command):
     activate = 'source %s/bin/activate' % env.virtenv
-    sudo(activate + ' && ' + command, user=env.django_user)
+    sudo(activate + ' && ' + command)  # , user=env.django_user)
 
 
 def _hg_clone():
     sudo('hg clone %s %s' % (env.repository, env.code_root))
 
+
 def _git_clone():
     sudo('git clone %s %s' % (env.repository, env.code_root),  user=env.django_user)
+
 
 def _test_nginx_conf():
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
@@ -483,7 +485,7 @@ def _upload_supervisord_conf():
 
 def _prepare_django_project():
     with cd(env.django_project_root):
-        virtenvsudo('python manage.py syncdb --noinput --verbosity=1')
+        virtenvrun('python manage.py syncdb --noinput --verbosity=1')
         if env.south_used:
             virtenvrun('python manage.py migrate --noinput --verbosity=1')
         virtenvsudo('python manage.py collectstatic --noinput')
