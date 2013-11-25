@@ -3,6 +3,7 @@
 
 from copy import copy
 from datetime import datetime
+import logging
 from os.path import basename, abspath, dirname, isfile, join, expanduser
 from fabric.api import env, puts, abort, cd, hide, task
 from fabric.operations import sudo, settings, run
@@ -439,6 +440,7 @@ def _git_clone():
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         with cd(env.code_root):
             res = sudo('git pull origin %(branch)s' % env, user=env.django_user)
+    logging.error('code root not exists: %s' % res)
     if 'failed' in res:
         sudo('git clone %(repository)s %(code_root)s' % env, user=env.django_user)
     with cd(env.code_root):
