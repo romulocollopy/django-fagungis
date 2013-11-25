@@ -375,7 +375,7 @@ def _create_virtualenv():
 def _setup_directories():
     sudo('mkdir -p %(projects_path)s' % env)
     sudo('chown -R 775 %(django_user_home)s ' % env)
-    #sudo('mkdir -p %(django_user_home)s/logs/nginx' % env)  # Not used
+    sudo('mkdir -p %(django_user_home)s/logs/nginx' % env)  # Not used
     # prepare gunicorn_logfile directory
     sudo('mkdir -p %s' % dirname(env.gunicorn_logfile))
     sudo('chown %s %s' % (env.django_user, dirname(env.gunicorn_logfile)))
