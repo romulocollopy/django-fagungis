@@ -441,7 +441,7 @@ def _git_clone():
         with cd(env.code_root):
             res = sudo('git pull origin %(branch)s' % env, user=env.django_user)
     logging.error('code root not exists: %s' % res)
-    if 'failed' in res:
+    if 'No such file or directory' in res:
         sudo('git clone %(repository)s %(code_root)s' % env, user=env.django_user)
     with cd(env.code_root):
         sudo('git config --global user.email you@example.com', user=env.django_user)
