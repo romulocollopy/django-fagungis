@@ -501,10 +501,10 @@ def _upload_supervisord_conf():
 
 def _prepare_django_project():
     with cd(env.django_project_root):
-        virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings %(django_project_settings)s'%env)
+        virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s'%env)
         if env.south_used:
-            virtenvrun('python manage.py migrate --noinput --verbosity=1 --settings %(django_project_settings)s'%env)
-        virtenvsudo('python manage.py collectstatic --noinput --settings %(django_project_settings)s'%env)
+            virtenvrun('python manage.py migrate --noinput --verbosity=1 --settings=%(django_project_settings)s'%env)
+        virtenvsudo('python manage.py collectstatic --noinput --settings=%(django_project_settings)s'%env)
 
 
 def _prepare_media_path():
