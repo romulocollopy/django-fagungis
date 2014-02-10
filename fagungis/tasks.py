@@ -43,7 +43,7 @@ def setup(new_server=True):
             _create_django_user()
             puts(green_bg('Django user created'))
             _setup_directories()
-
+    _check_ssh_key()  # verifica / cria chave pública : cadu 10140210
     _setup_project_directories()
     if env.repository_type == 'hg':
         _hg_clone()
@@ -375,7 +375,6 @@ def _create_virtualenv():
 
 def _setup_directories():
     sudo('mkdir -p %(projects_path)s' % env)
-    sudo('chown -R 775 %(django_user_home)s ' % env)
     sudo('mkdir -p %(django_user_home)s/logs/nginx' % env)  # Not used
     # prepare gunicorn_logfile directory
     sudo('mkdir -p %s' % dirname(env.gunicorn_logfile))
@@ -391,6 +390,7 @@ def _setup_directories():
     sudo('mkdir -p %(django_user_home)s/tmp' % env)
     sudo('mkdir -p %(nginx_htdocs)s' % env)
     sudo('echo "<html><body>nothing here</body></html> " > %(nginx_htdocs)s/index.html' % env)
+    sudo('chown -R %(django_user)s %(django_user_home)s ' % env)
 
 
 def _directories_exist():
@@ -546,3 +546,19 @@ def _read_key_file(key_file):
 def _push_key(key_file='~/.ssh/id_rsa.pub'):
     key_text = _read_key_file(key_file)
     append('~/.ssh/authorized_keys', key_text)
+
+
+def _check_ssh_key():
+    res = files.exists("/opt/django/.ssh/id_rsa.pub", use_sudo=True, verbose=False)
+    if not res:
+        print red(u"chave pública do user django não encontrada em /opt/django/.ssh/id_rsa.pub")
+        res = console.confirm("Criar chave agora ?", default=True)
+        if res:
+            res = sudo('chown django -R /opt/django')
+            sudo('ssh-keygen', user=env.django_user)
+    print u" ==================[ L E I A  ]===================="
+    print u" !!!!!!!!!!!!!!! Chave pública utilizada !!!!!!!!!!"
+    print u" essa chave será utilizada para acessar o repositório."
+    sudo('cat /opt/django/.ssh/id_rsa.pub', user=env.django_user)
+    res = console.confirm("Chave de deploy incluida no repo ?", default=True)
+
