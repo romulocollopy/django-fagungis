@@ -1,54 +1,79 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import string
+import random
+
 from copy import copy
 from datetime import datetime
 import logging
 from os.path import basename, abspath, dirname, isfile, join, expanduser
+
 from fabric.api import env, puts, abort, cd, hide, task
 from fabric.operations import sudo, settings, run
-from fabric.contrib import console
+from fabric.contrib import console, files
 from fabric.contrib.files import upload_template, append, exists
+from fabric.colors import green, red, white
 
-from fabric.colors import _wrap_with, green
-
-green_bg = _wrap_with('42')
-red_bg = _wrap_with('41')
 fagungis_path = dirname(abspath(__file__))
 
 
+def _wrap_with(code):
+    def inner(text, bold=False, bg=49):  # keep bg default if none
+        c = code
+        if bold:
+            c = "1;%s" % (c)
+        c = "%s;%s" % (c, bg)
+        return "\033[%sm%s\033[0m" % (c, text)
+    return inner
+
+red = _wrap_with('31')
+green = _wrap_with('32')
+yellow = _wrap_with('33')
+blue = _wrap_with('34')
+magenta = _wrap_with('35')
+cyan = _wrap_with('36')
+white = _wrap_with('37')
+
+
 @task
-def setup(new_server=True):
+def setup(dependencies="yes"):
     '''
     SETUP
+    fab ehall setup:dependencies=False
     '''
+    puts(red(' -------- I N I C I A N D O    S E T U P  ...', bg=104))
+
     #  test configuration start
     if not test_configuration():
-        if not console.confirm("Configuration test %s! Do you want to continue?" % red_bg('failed'), default=False):
+        if not console.confirm("Configuration test %s! Do you want to continue?" % red('failed'), default=False):
             abort("Aborting at user request.")
             #  test configuration end
     if env.ask_confirmation:
-        if not console.confirm("Are you sure you want to setup %s?" % red_bg(env.project.upper()), default=False):
+        if not console.confirm("Are you sure you want to setup %s?" % red(env.project.upper()), default=False):
             abort("Aborting at user request.")
-    puts(green_bg('Start setup...'))
+    puts(green('Iniciando setup...', bg='107'))
     start_time = datetime.now()
 
-    if not _directories_exist():
+    if not _directories_exist():  # verifica se existe ht_docs
         _push_key()
         _verify_sudo()
-        if new_server:
-            puts(green_bg('Dependecies'))
-            _install_dependencies()  # nao instala so packs
 
-            _create_django_user()
-            puts(green_bg('Django user created'))
-            _setup_directories()
+        if dependencies == "yes":
+            puts(red('== Instalando pacotes do sistema ...'))
+            _install_dependencies()  # nao instala pips so packs
+        else:
+            puts(red('Pacotes do sistema não serão instalados.'))
+
+        _create_django_user()
+        _setup_directories()
     _check_ssh_key()  # verifica / cria chave pública : cadu 10140210
     _setup_project_directories()
     if env.repository_type == 'hg':
         _hg_clone()
     else:
         _git_clone()
+    _set_config_file()
     _install_virtualenv()
     _create_virtualenv()
     _install_gunicorn()
@@ -59,22 +84,23 @@ def setup(new_server=True):
 
     end_time = datetime.now()
     finish_message = '[%s] Correctly finished in %i seconds' % \
-                     (green_bg(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
+                     (green(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
     puts(finish_message)
 
 
 @task
-def deploy(new_apps=True, new_server_conf=True):
+def deploy(new_apps=True, new_app_conf=True):
     #  test configuration start
+    puts(green('Iniciando DEPLOY...', bg=107))
     if not test_configuration():
-        if not console.confirm("Configuration test %s! Do you want to continue?" % red_bg('failed'), default=False):
+        if not console.confirm("Configuration test %s! Do you want to continue?" % red('failed'), default=False):
             abort("Aborting at user request.")
             #  test configuration end
     _verify_sudo()
     if env.ask_confirmation:
-        if not console.confirm("Are you sure you want to deploy in %s?" % red_bg(env.project.upper()), default=False):
+        if not console.confirm("Are you sure you want to deploy in %s?" % red(env.project.upper()), default=False):
             abort("Aborting at user request.")
-    puts(green_bg('Start deploy...'))
+    puts(green('Start deploy...'))
     start_time = datetime.now()
 
     if env.repository_type == 'hg':
@@ -83,7 +109,7 @@ def deploy(new_apps=True, new_server_conf=True):
         git_pull()
     if new_apps:
         _install_requirements()
-    if new_server_conf:
+    if new_app_conf:
         _upload_nginx_conf()
         _upload_rungunicorn_script()
         _upload_supervisord_conf()
@@ -93,7 +119,7 @@ def deploy(new_apps=True, new_server_conf=True):
 
     end_time = datetime.now()
     finish_message = '[%s] Correctly deployed in %i seconds' % \
-                     (green_bg(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
+                     (green(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
     puts(finish_message)
 
 
@@ -101,13 +127,13 @@ def deploy(new_apps=True, new_server_conf=True):
 def remove():
     #  test configuration start
     if not test_configuration():
-        if not console.confirm("Configuration test %s! Do you want to continue?" % red_bg('failed'), default=False):
+        if not console.confirm("Configuration test %s! Do you want to continue?" % red('failed'), default=False):
             abort("Aborting at user request.")
             #  test configuration end
     if env.ask_confirmation:
-        if not console.confirm("Are you sure you want to remove %s?" % red_bg(env.project.upper()), default=False):
+        if not console.confirm("Are you sure you want to remove %s?" % red(env.project.upper()), default=False):
             abort("Aborting at user request.")
-    puts(green_bg('Start remove...'))
+    puts(green('Start remove...'))
     start_time = datetime.now()
 
     _remove_project_files()
@@ -116,7 +142,7 @@ def remove():
 
     end_time = datetime.now()
     finish_message = '[%s] Correctly finished in %i seconds' % \
-                     (green_bg(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
+                     (green(end_time.strftime('%H:%M:%S')), (end_time - start_time).seconds)
     puts(finish_message)
 
 
@@ -128,6 +154,7 @@ def hg_pull():
 
 @task
 def git_pull():
+    puts(blue('== Git Pull  - Baixando aplicação ...', 1, bg=107))
     with cd(env.code_root):
         with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
             res = sudo('git checkout -b %(branch)s' % env, user=env.django_user)
@@ -314,6 +341,7 @@ def test_configuration(verbose=True):
 
 
 def _create_django_user():
+    puts(blue("== Verifica / Cria usuário 'django' ...", 1, bg=107))
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         res = sudo('useradd -d %(django_user_home)s -m -r %(django_user)s -s /bin/bash' % env)
     if 'already exists' in res:
@@ -325,11 +353,13 @@ def _create_django_user():
 
 def _verify_sudo():
     ''' we just check if the user is sudoers '''
+    puts(blue("== Verificando SUDOER  ...", 1, bg=107))
     sudo('cd .')
 
 
 def _install_nginx():
     # add nginx stable ppa
+    puts(blue("== Instalando NginX ..."))
     sudo("add-apt-repository -y ppa:nginx/stable")
     sudo("apt-get update")
     sudo("apt-get -y install nginx")
@@ -338,6 +368,7 @@ def _install_nginx():
 
 def _install_dependencies():
     ''' Ensure those Debian/Ubuntu packages are installed '''
+    puts(blue("== instalando pacotes do sistema  ...", 1, bg=107))
     packages = [
         "python-software-properties",
         "python-dev",
@@ -354,6 +385,7 @@ def _install_dependencies():
 
 
 def _install_requirements():
+    puts(blue("== requirements.txt ... instalando pacotes python ...", 1, bg=107))
     ''' you must have a file called requirements.txt in your project root'''
     if 'requirements_file' in env and env.requirements_file:
         virtenvsudo('pip install -r %s' % env.requirements_file)
@@ -362,20 +394,36 @@ def _install_requirements():
 def _install_gunicorn():
     """ force gunicorn installation into your virtualenv, even if it's installed globally.
     for more details: https://github.com/benoitc/gunicorn/pull/280 """
+    puts(blue("== instalando green unicorn ..."))
     virtenvsudo('pip install -I gunicorn')
 
 
 def _install_virtualenv():
+    puts(blue("== Instalando virtul env ..."))
     sudo('pip install virtualenv')
 
 
 def _create_virtualenv():
+    puts(blue("== cria virtualenv ..."))
     sudo('virtualenv --%s %s' % (' --'.join(env.virtenv_options), env.virtenv))
 
 
 def _setup_directories():
+    '''
+    cria estrutura de diretórios do projeto Django no servidor
+    e da permissão para o user django
+    /opt/django
+            /projects
+            /logs
+            /scripts
+            ...
+
+    '''
+    puts(blue("== Criando árvore de diretórios do user django ...", 1, bg=107))
+
     sudo('mkdir -p %(projects_path)s' % env)
     sudo('mkdir -p %(django_user_home)s/logs/nginx' % env)  # Not used
+    sudo('mkdir -p %(django_user_home)s/configs/apps' % env)
     # prepare gunicorn_logfile directory
     sudo('mkdir -p %s' % dirname(env.gunicorn_logfile))
     sudo('chown %s %s' % (env.django_user, dirname(env.gunicorn_logfile)))
@@ -398,6 +446,7 @@ def _directories_exist():
 
 
 def _setup_project_directories():
+    puts(blue("== seta arquivos de log"))
     sudo('mkdir -p %(virtenv)s' % env)
     # prepare gunicorn_logfile
     sudo('touch %s' % env.gunicorn_logfile)
@@ -437,6 +486,7 @@ def _hg_clone():
 
 
 def _git_clone():
+    puts(blue("== CLONE do repositório ...", 1, bg=107))
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         with cd(env.code_root):
             res = sudo('git pull origin %(branch)s' % env, user=env.django_user)
@@ -452,7 +502,7 @@ def _test_nginx_conf():
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         res = sudo('nginx -t -c /etc/nginx/nginx.conf')
     if 'test failed' in res:
-        abort(red_bg('NGINX configuration test failed! Please review your parameters.'))
+        abort(red('NGINX configuration test failed! Please review your parameters.'))
 
 
 def _reload_nginx():
@@ -530,9 +580,10 @@ def _supervisor_restart():
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         res = sudo('%(supervisorctl)s restart %(supervisor_program_name)s' % env)
     if 'ERROR' in res:
-        print red_bg("%s NOT STARTED!" % env.supervisor_program_name)
+
+        print red("%s NOT STARTED!" % env.supervisor_program_name)
     else:
-        print green_bg("%s correctly started!" % env.supervisor_program_name)
+        print green("%s correctly started!" % env.supervisor_program_name)
 
 
 def _read_key_file(key_file):
@@ -544,21 +595,71 @@ def _read_key_file(key_file):
 
 
 def _push_key(key_file='~/.ssh/id_rsa.pub'):
+    ''' adiciona chave do usuário para authorized_keys '''
+    puts(green('adicionando chave do usuário para authorized_keys ssh file'))
     key_text = _read_key_file(key_file)
     append('~/.ssh/authorized_keys', key_text)
 
 
 def _check_ssh_key():
+    '''
+    Verifica/cria arquivo de chave SSH
+    e mostra conteúdo para adicionar ao serviço de repo.
+    '''
+    puts(blue("== Verifica chave SSH de acesso ao repo ...", 1, bg=107))
     res = files.exists("/opt/django/.ssh/id_rsa.pub", use_sudo=True, verbose=False)
     if not res:
-        print red(u"chave pública do user django não encontrada em /opt/django/.ssh/id_rsa.pub")
+
+        puts(red("chave pública do user django não encontrada em /opt/django/.ssh/id_rsa.pub"))
         res = console.confirm("Criar chave agora ?", default=True)
         if res:
             res = sudo('chown django -R /opt/django')
             sudo('ssh-keygen', user=env.django_user)
-    print u" ==================[ L E I A  ]===================="
-    print u" !!!!!!!!!!!!!!! Chave pública utilizada !!!!!!!!!!"
-    print u" essa chave será utilizada para acessar o repositório."
+    puts(red(" ==================[ L E I A  ]===================="))
+    puts(red(" !!!!!!!!!!!!!!! Chave pública utilizada !!!!!!!!!!"))
+    puts(red(" essa chave será utilizada para acessar o repositório."))
     sudo('cat /opt/django/.ssh/id_rsa.pub', user=env.django_user)
     res = console.confirm("Chave de deploy incluida no repo ?", default=True)
+
+
+def _generate_scret_key():
+    '''
+    gera chave de 100 caracteres
+    '''
+    return ''.join(
+        [
+            random.SystemRandom().choice(string.printable[:-15]) for i in range(100)
+        ]
+    ).replace(' ', '')
+
+
+def _set_config_file():
+    '''
+    faz upload ddo arquivo de config
+    baseado no template "config_template.conf"
+    e seta a secret_key
+    '''
+
+    context = {
+        'secret_key': _generate_scret_key(),
+        'default_from_email': '',
+        'email_host': '',
+        'email_host_password': '',
+        'email_host_user': '',
+        'email_port': '',
+        'email_use_tls': '',
+        'email_use_ssl': '',
+    }
+    template = '%s/conf/config_template.conf' % fagungis_path
+    destination_path = '%(django_user_home)s/configs/apps/%(project)s.conf' % env
+    upload_template(
+        template,
+        destination_path,
+        context=context,
+        use_sudo=True,
+        backup=True,
+        mirror_local_mode=False,
+    )
+    sudo('chmod ug+rw  %s' % destination_path)
+
 
