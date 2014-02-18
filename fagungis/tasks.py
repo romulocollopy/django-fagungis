@@ -3,12 +3,16 @@
 
 import string
 import random
+import ConfigParser
+import logging
+import sys  # mostrar mesgs de erro
+from StringIO import StringIO
 
 from copy import copy
 from datetime import datetime
-import logging
 from os.path import basename, abspath, dirname, isfile, join, expanduser
 
+from fabric.api import get
 from fabric.api import env, puts, abort, cd, hide, task
 from fabric.operations import sudo, settings, run
 from fabric.contrib import console, files
@@ -73,6 +77,7 @@ def setup(dependencies="yes"):
         _hg_clone()
     else:
         _git_clone()
+
     _set_config_file()
     _install_virtualenv()
     _create_virtualenv()
@@ -164,6 +169,12 @@ def git_pull():
 
 
 @task
+def reset_nginx():
+    _upload_nginx_conf()
+    sudo('sudo service nginx restart')
+
+
+@task
 def test_configuration(verbose=True):
     errors = []
     parameters_info = []
@@ -241,10 +252,10 @@ def test_configuration(verbose=True):
         errors.append('"gunicorn_bind" configuration missing')
     elif verbose:
         parameters_info.append(('gunicorn_bind', env.gunicorn_bind))
-    if 'gunicorn_logfile' not in env or not env.gunicorn_logfile:
-        errors.append('"gunicorn_logfile" configuration missing')
-    elif verbose:
-        parameters_info.append(('gunicorn_logfile', env.gunicorn_logfile))
+    # if 'gunicorn_logfile' not in env or not env.gunicorn_logfile:
+    #     errors.append('"gunicorn_logfile" configuration missing')
+    # elif verbose:
+    #     parameters_info.append(('gunicorn_logfile', env.gunicorn_logfile))
     if 'rungunicorn_script' not in env or not env.rungunicorn_script:
         errors.append('"rungunicorn_script" configuration missing')
     elif verbose:
@@ -307,10 +318,10 @@ def test_configuration(verbose=True):
         errors.append('"supervisor_redirect_stderr" configuration missing')
     elif verbose:
         parameters_info.append(('supervisor_redirect_stderr', env.supervisor_redirect_stderr))
-    if 'supervisor_stdout_logfile' not in env or not env.supervisor_stdout_logfile:
-        errors.append('"supervisor_stdout_logfile" configuration missing')
-    elif verbose:
-        parameters_info.append(('supervisor_stdout_logfile', env.supervisor_stdout_logfile))
+    # if 'supervisor_stdout_logfile' not in env or not env.supervisor_stdout_logfile:
+    #     errors.append('"supervisor_stdout_logfile" configuration missing')
+    # elif verbose:
+    #     parameters_info.append(('supervisor_stdout_logfile', env.supervisor_stdout_logfile))
     if 'supervisord_conf_file' not in env or not env.supervisord_conf_file:
         errors.append('"supervisord_conf_file" configuration missing')
     elif verbose:
@@ -416,22 +427,20 @@ def _setup_directories():
             /projects
             /logs
             /scripts
+            /configs
             ...
 
     '''
     puts(blue("== Criando árvore de diretórios do user django ...", 1, bg=107))
 
     sudo('mkdir -p %(projects_path)s' % env)
-    sudo('mkdir -p %(django_user_home)s/logs/nginx' % env)  # Not used
+    sudo('mkdir -p %(django_user_home)s/logs/' % env)
+    sudo('chown %(django_user)s %(django_user_home)s/logs' % env)
+
     sudo('mkdir -p %(django_user_home)s/configs/apps' % env)
-    # prepare gunicorn_logfile directory
-    sudo('mkdir -p %s' % dirname(env.gunicorn_logfile))
-    sudo('chown %s %s' % (env.django_user, dirname(env.gunicorn_logfile)))
-    sudo('chmod -R 775 %s' % dirname(env.gunicorn_logfile))
-    # prepare supervisor_stdout_logfile directory
-    sudo('mkdir -p %s' % dirname(env.supervisor_stdout_logfile))
-    sudo('chown %s %s' % (env.django_user, dirname(env.supervisor_stdout_logfile)))
-    sudo('chmod -R 775 %s' % dirname(env.supervisor_stdout_logfile))
+
+    #sudo('chmod -R 775 %s' % dirname(env.gunicorn_logfile))
+
     sudo('mkdir -p %s' % dirname(env.nginx_conf_file))
     sudo('mkdir -p %s' % dirname(env.supervisord_conf_file))
     sudo('mkdir -p %s' % dirname(env.rungunicorn_script))
@@ -449,11 +458,11 @@ def _setup_project_directories():
     puts(blue("== seta arquivos de log"))
     sudo('mkdir -p %(virtenv)s' % env)
     # prepare gunicorn_logfile
-    sudo('touch %s' % env.gunicorn_logfile)
-    sudo('chown %s %s' % (env.django_user, env.gunicorn_logfile))
+    #sudo('touch %s' % env.gunicorn_logfile)
+    #sudo('chown %s %s' % (env.django_user, env.gunicorn_logfile))
     # prepare supervisor_stdout_logfile
-    sudo('touch %s' % env.supervisor_stdout_logfile)
-    sudo('chown %s %s' % (env.django_user, env.supervisor_stdout_logfile))
+    #sudo('touch %s' % env.supervisor_stdout_logfile)
+    #sudo('chown %s %s' % (env.django_user, env.supervisor_stdout_logfile))
 
 
 def _remove_project_files():
@@ -622,26 +631,50 @@ def _check_ssh_key():
     res = console.confirm("Chave de deploy incluida no repo ?", default=True)
 
 
-def _generate_scret_key():
+def _read_config_file():
     '''
-    gera chave de 100 caracteres
+    tenta ler arquivo de configuração
+    Return: objeto do tipo ConfigParser
     '''
-    return ''.join(
-        [
-            random.SystemRandom().choice(string.printable[:-15]) for i in range(100)
-        ]
-    ).replace(' ', '')
+    config = ConfigParser.ConfigParser()
+    config_file = None
+    try:
+        config_file = open('/opt/django/configs/apps/ehall.conf')
+    except IOError as e:
+        print "I/O error({0}): {1} - Possível arquivo inexistente.".format(e.errno, e.strerror)
+        config_file = None
+    except:
+        print "Erro não esperado:", sys.exc_info()[0]
+        raise
+
+    if config_file is not None:
+        config.readfp(config_file)
+    else:
+        config = None
+
+    return config
+
+
+def _generate_secret_key():
+    secret_key = ''.join([random.SystemRandom().choice(string.printable[:-15]) for i in range(100)]).replace(' ', '')
+    return secret_key
 
 
 def _set_config_file():
     '''
-    faz upload ddo arquivo de config
+    faz upload do arquivo de config
     baseado no template "config_template.conf"
     e seta a secret_key
     '''
+    # garante que a secret_key e uma app já existenete não seja trocada -> destroi users no banco
+    if files.exists("/opt/django/configs/apps/ehall.conf", use_sudo=True, verbose=False):
+        config = _red_config_file()
+        env.secret_key = config('APP', 'secret_key')
+    else:
+        env.secret_key = _generate_secret_key()
 
     context = {
-        'secret_key': _generate_scret_key(),
+        'secret_key': env.secret_key,
         'default_from_email': '',
         'email_host': '',
         'email_host_password': '',
@@ -652,6 +685,7 @@ def _set_config_file():
     }
     template = '%s/conf/config_template.conf' % fagungis_path
     destination_path = '%(django_user_home)s/configs/apps/%(project)s.conf' % env
+
     upload_template(
         template,
         destination_path,
@@ -660,6 +694,24 @@ def _set_config_file():
         backup=True,
         mirror_local_mode=False,
     )
+
     sudo('chmod ug+rw  %s' % destination_path)
 
 
+@task
+def print_config_file():
+    import ConfigParser
+    fd = StringIO()
+    try:
+        # trocar por vars
+        get('/home/ubuntu/teste.conf', fd)  # fd)
+
+    except:
+        puts(red('Arquivo de configuração não emcontrado em %s' % ('/opt/django/configs/apps/ehall.conf'), bg=104))  # trocar por vars
+        print "Unexpected error:", sys.exc_info()[0]
+
+    #s = fd.getvalue()  # por que não consegui passar direto o fd pro copnfig parser.
+    config = ConfigParser.ConfigParser()
+    print ">>>",fd.getvalue()
+    config.readfp(fd)
+    print config.sections()
