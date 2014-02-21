@@ -1,3 +1,42 @@
+## Uso 
+
+
+### configure o arquivo settings.ini no mesmo path que o arquivo fabfile.py
+
+
+
+    
+    [DEPLOY]
+    project_name=NOME_APP
+    repositorio = git@bitbucket.org:znc/e-hall.git
+    repository_type = git
+    deploy_hosts = ubuntu@107.22.193.179:29992
+    arquivo_config = /opt/django/configs/apps/NOME_APP.conf
+    
+    gunicorn_bind = "127.0.0.1:8032"  # ip e porta 
+    
+    [APP]
+    settings_file = NOME_APP.settings.prod
+    debug=False
+    
+    [EMAIL]
+    default_from_email =
+    email_host =
+    email_host_password =
+    email_host_user =
+    email_port =
+    email_use_tls =
+    email_use_ssl =
+    
+Se servidor novo, sem pacotes 
+
+    fab *nome_app* setup
+
+Se os pacotes do sistema já estão instalados, 
+
+    fab *nome_app* setup:dependencies=no
+
+
 
 
 ##Como funciona ?
