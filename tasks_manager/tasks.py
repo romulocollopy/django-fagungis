@@ -78,17 +78,20 @@ def setup(dependencies="yes"):
         _create_django_user()
         _setup_directories()
     _check_ssh_key()  # verifica / cria chave pública : cadu 10140210
-    _setup_virtualenv_directories
+
     _git_clone()
     _set_config_file()
     _install_virtualenv()
     _create_virtualenv()
-    _install_gunicorn()
-
-    _upload_rungunicorn_script()
-    _upload_supervisord_conf()
-    _upload_nginx_conf()
     _install_requirements()
+    _install_gunicorn()
+    _upload_rungunicorn_script()
+    #console.confirm('===========')
+    _upload_supervisord_conf()
+    #q!console.confirm('===========')
+    _upload_nginx_conf()
+    _reload_supervisorctl()
+    
 
     end_time = datetime.now()
     finish_message = '[%s] Correctly finished in %i seconds' % \
@@ -452,18 +455,6 @@ def _directories_exist():
     return exists(dirname(env.nginx_htdocs), use_sudo=True)
 
 
-def _setup_virtualenv_directories():
-    ''' '''
-    puts(blue("== cria dir do virtualenv"))
-    sudo('mkdir -p %(virtenv)s' % env)
-    # prepare gunicorn_logfile
-    #sudo('touch %s' % env.gunicorn_logfile)
-    #sudo('chown %s %s' % (env.django_user, env.gunicorn_logfile))
-    # prepare supervisor_stdout_logfile
-    #sudo('touch %s' % env.supervisor_stdout_logfile)
-    #sudo('chown %s %s' % (env.django_user, env.supervisor_stdout_logfile))
-
-
 def _remove_project_files():
     sudo('rm -rf %s' % env.virtenv)
     sudo('rm -rf %s' % env.code_root)
@@ -537,6 +528,7 @@ def _upload_nginx_conf():
 def _reload_supervisorctl():
     #sudo('%(supervisorctl)s reread' % env)
     sudo('%(supervisorctl)s update' % env)
+    #sudo('%(supervisorctl)s restart %(supervisor_program_name)s' % env)
     #sudo('%(supervisorctl)s reload' % env) # desnecessario reload, e leva mais tempo
 
 
@@ -679,12 +671,12 @@ def _set_config_file():
 
 
 @task
-def print_config_file():
+def print_configs():
     import ConfigParser
     fd = StringIO()
     try:
         # trocar por vars
-        get('/home/ubuntu/teste.conf', fd)  # fd)
+        get('/opt/django/configs/apps/ehall.conf', fd)  # fd)
 
     except:
         puts(red('Arquivo de configuração não emcontrado em %s' % ('/opt/django/configs/apps/ehall.conf'), bg=104))  # trocar por vars
@@ -695,3 +687,4 @@ def print_config_file():
     print ">>>",fd.getvalue()
     config.readfp(fd)
     print config.sections()
+
