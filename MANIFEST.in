@@ -1,0 +1,3 @@
+include README.md
+recursive-include tasks_manager/conf *
+recursive-include tasks_manager/scripts *
