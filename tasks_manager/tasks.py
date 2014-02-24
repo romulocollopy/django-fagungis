@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import string
-import random
 import ConfigParser
 import logging
+import random
+import string
 import sys  # mostrar mesgs de erro
-from StringIO import StringIO
 
+from StringIO import StringIO
 from copy import copy
 from datetime import datetime
 from os.path import basename, abspath, dirname, isfile, join
 
-from fabric.api import get
 from fabric.api import env, puts, abort, cd, hide, task
-from fabric.operations import sudo, settings, run
+from fabric.api import get
 from fabric.contrib import console, files
 from fabric.contrib.files import upload_template, exists
+from fabric.operations import sudo, settings, run
 
 
 base_path = dirname(abspath(__file__))
@@ -47,7 +47,7 @@ OPT_DJANGO_CONF_APPS = '/opt/django/configs/apps/%(project)s.conf'
 def setup(dependencies="yes"):
     '''
     SETUP
-    fab ehall setup:dependencies=False
+    fab preject_name setup:dependencies=False
     '''
     puts(red(' -------- I N I C I A N D O    S E T U P  ...', bg=104))
 
@@ -637,22 +637,23 @@ def _set_config_file():
     baseado no template "config_template.conf"
     e seta a secret_key
     '''
+    OPT_DJANGO_CONF_APP = OPT_DJANGO_CONF_APPS % env
     # garante que a secret_key e uma app já existenete não seja trocada -> destroi users no banco
-    if files.exists("/opt/django/configs/apps/ehall.conf", use_sudo=True, verbose=False):
+    if files.exists(OPT_DJANGO_CONF_APP, use_sudo=True, verbose=False):
         config = _read_config_file()
         env.secret_key = config('APP', 'secret_key')
     else:
         env.secret_key = _generate_secret_key()
 
     context = {
-        'secret_key': env.secret_key,
-        'default_from_email': '',
-        'email_host': '',
-        'email_host_password': '',
-        'email_host_user': '',
-        'email_port': '',
-        'email_use_tls': '',
-        'email_use_ssl': '',
+        'secret_key': env.secret_key or '',
+        'default_from_email': env.default_from_email or '',
+        'email_host': env.email_host or '',
+        'email_host_password': env.email_host_password or '',
+        'email_host_user': env.email_host_user or '',
+        'email_port': env.email_port or '',
+        'email_use_tls': env.email_use_tls or '',
+        'email_use_ssl': env.email_use_ssl or '',
     }
     template = '%s/conf/config_template.conf' % base_path
     destination_path = '%(django_user_home)s/configs/apps/%(project)s.conf' % env
