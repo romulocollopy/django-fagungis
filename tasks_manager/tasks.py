@@ -40,6 +40,9 @@ cyan = _wrap_with('36')
 white = _wrap_with('37')
 
 
+OPT_DJANGO_CONF_APPS = '/opt/django/configs/apps/%(project)s.conf'
+
+
 @task
 def setup(dependencies="yes"):
     '''
@@ -607,22 +610,19 @@ def _read_config_file():
     tenta ler arquivo de configuração
     Return: objeto do tipo ConfigParser
     '''
+
+    OPT_DJANGO_CONF_APP = OPT_DJANGO_CONF_APPS % env
+
     config = ConfigParser.ConfigParser()
     config_file = None
     try:
-        config_file = open('/opt/django/configs/apps/ehall.conf')
+        config_file = open(OPT_DJANGO_CONF_APP)
     except IOError as e:
-        print "I/O error({0}): {1} - Possível arquivo inexistente.".format(e.errno, e.strerror)
-        config_file = None
+        raise Exception(u"I/O error({0}): {1} - Possível arquivo inexistente.".format(e.errno, e.strerror))
     except:
-        print "Erro não esperado:", sys.exc_info()[0]
-        raise
+        raise Exception(u"Erro não esperado:", sys.exc_info()[0])
 
-    if config_file is not None:
-        config.readfp(config_file)
-    else:
-        config = None
-
+    config.readfp(config_file)
     return config
 
 
@@ -671,14 +671,15 @@ def _set_config_file():
 
 @task
 def print_configs():
+    OPT_DJANGO_CONF_APP = OPT_DJANGO_CONF_APPS % env
     import ConfigParser
     fd = StringIO()
     try:
         # trocar por vars
-        get('/opt/django/configs/apps/ehall.conf', fd)  # fd)
+        get(OPT_DJANGO_CONF_APP, fd)  # fd)
 
     except:
-        puts(red('Arquivo de configuração não emcontrado em %s' % ('/opt/django/configs/apps/ehall.conf'), bg=104))  # trocar por vars
+        puts(red('Arquivo de configuração não emcontrado em %s' % (OPT_DJANGO_CONF_APP), bg=104))  # trocar por vars
         print "Unexpected error:", sys.exc_info()[0]
 
     #s = fd.getvalue()  # por que não consegui passar direto o fd pro copnfig parser.
