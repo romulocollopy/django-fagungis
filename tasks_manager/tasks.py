@@ -10,14 +10,14 @@ from StringIO import StringIO
 
 from copy import copy
 from datetime import datetime
-from os.path import basename, abspath, dirname, isfile, join, expanduser
+from os.path import basename, abspath, dirname, isfile, join
 
 from fabric.api import get
 from fabric.api import env, puts, abort, cd, hide, task
 from fabric.operations import sudo, settings, run
 from fabric.contrib import console, files
-from fabric.contrib.files import upload_template, append, exists
-from fabric.colors import green, red, white
+from fabric.contrib.files import upload_template, exists
+
 
 base_path = dirname(abspath(__file__))
 
@@ -91,7 +91,6 @@ def setup(dependencies="yes"):
     #q!console.confirm('===========')
     _upload_nginx_conf()
     _reload_supervisorctl()
-    
 
     end_time = datetime.now()
     finish_message = '[%s] Correctly finished in %i seconds' % \
@@ -125,7 +124,7 @@ def deploy(new_apps=True, new_app_conf=True):
         _upload_rungunicorn_script()
         _upload_supervisord_conf()
     _prepare_django_project()
-    _prepare_media_path() # fica porque pode ser alterado em uma review de código
+    _prepare_media_path()  # fica porque pode ser alterado em uma review de código
     _supervisor_restart()
 
     end_time = datetime.now()
@@ -547,10 +546,10 @@ def _upload_supervisord_conf():
 
 def _prepare_django_project():
     with cd(env.django_project_root):
-        virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s'%env)
+        virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
         if env.south_used:
-            virtenvrun('python manage.py migrate --noinput --verbosity=1 --settings=%(django_project_settings)s'%env)
-        virtenvsudo('python manage.py collectstatic --noinput --settings=%(django_project_settings)s'%env)
+            virtenvrun('python manage.py migrate --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
+        virtenvsudo('python manage.py collectstatic --noinput --settings=%(django_project_settings)s' % env)
 
 
 def _prepare_media_path():
@@ -640,7 +639,7 @@ def _set_config_file():
     '''
     # garante que a secret_key e uma app já existenete não seja trocada -> destroi users no banco
     if files.exists("/opt/django/configs/apps/ehall.conf", use_sudo=True, verbose=False):
-        config = _red_config_file()
+        config = _read_config_file()
         env.secret_key = config('APP', 'secret_key')
     else:
         env.secret_key = _generate_secret_key()
@@ -684,7 +683,6 @@ def print_configs():
 
     #s = fd.getvalue()  # por que não consegui passar direto o fd pro copnfig parser.
     config = ConfigParser.ConfigParser()
-    print ">>>",fd.getvalue()
+    print ">>>", fd.getvalue()
     config.readfp(fd)
     print config.sections()
-
