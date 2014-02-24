@@ -688,3 +688,16 @@ def print_configs():
     print ">>>", fd.getvalue()
     config.readfp(fd)
     print config.sections()
+
+
+@task
+def manage(*args):
+    with cd(env.django_project_root):
+        params = {'args': " ".join(args)}
+        params.update(env)
+        virtenvrun('python manage.py  %(args)s --settings=%(django_project_settings)s' % params)
+
+
+@task
+def restart():
+    _supervisor_restart()
