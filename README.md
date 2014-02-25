@@ -127,7 +127,7 @@
 
         # START gunicorn settings ###
         #  be sure to not have anything running on that port
-        env.gunicorn_bind = "127.0.0.1:8032"
+        env.gunicorn_bind = ini.get('DEPLOY', 'gunicorn_bind')
         env.rungunicorn_script = '%(django_user_home)s/scripts/rungunicorn_%(project)s.sh' % env
         env.gunicorn_workers = 1
         env.gunicorn_worker_class = "eventlet"
@@ -248,7 +248,6 @@ Se os pacotes do sistema já estão instalados,
 1. Upload do template do __supervidor__
 1. Upload do template do __nginx__
 1. Instala os pacotes python da aplicação (_requirements.txt_)
-
 
 
 
