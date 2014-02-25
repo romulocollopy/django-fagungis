@@ -26,6 +26,7 @@
 
 
 ### deixei seu arquivo fabfile.py como este:
+    # coding: utf-8
     import ConfigParser
     import os
     import sys
@@ -34,21 +35,24 @@
     from fabric.contrib import django
     from tasks_manager.tasks import *
 
-    sys.path.append('../znc_gerencia')
+    sys.path.append('../{{ project_name }}')
 
-    # le arquivo INI
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     ini = ConfigParser.ConfigParser()
     ini.readfp(open('settings.ini'))
 
     PROD_SETTINGS = ini.get('APP', 'settings_file')
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     django.settings_module(PROD_SETTINGS)
 
     from django.conf import settings
 
 
+    env.SECRET_KEY = settings.SECRET_KEY
+
+
     @task
-    def znc_gerencia():
+    def {{ project_name }}():
         env.repository_type = 'git'
         env.secret_key = settings.SECRET_KEY
 
@@ -85,17 +89,20 @@
         env.code_root = join(env.projects_path, env.project)
 
         # manage.py path - used to run manangment commands
-        env.django_project_root = join(env.code_root, 'znc_gerencia')
+        env.django_project_root = join(env.code_root, '{{ project_name }}')
+
+        # this is the server path for all projects static_files
+        STATIC_DIR = join(env.django_user_home, 'static_files')
 
         # MEDIA
-        env.django_media_url = settings.MEDIA_URL
-        env.django_media_root = settings.STATIC_DIR  # env usada para setar nginx.
         env.django_media_path = settings.MEDIA_ROOT  # Cara do settings
+        env.django_media_root = settings.STATIC_DIR  # env usada para setar nginx.
+        env.django_media_url = settings.MEDIA_URL
 
         # MEDIA
-        env.django_static_url = settings.STATIC_URL
-        env.django_static_root = settings.STATIC_DIR
         env.django_static_path = settings.STATIC_ROOT  # usado no nginx
+        env.django_static_root = settings.STATIC_DIR
+        env.django_static_url = settings.STATIC_URL
 
         #
         # SOUTH CHECK                           ##
@@ -151,16 +158,6 @@
         env.supervisord_conf_file = '%(django_user_home)s/configs/supervisord/%(project)s.conf' % env
         # END supervisor settings ###
 
-
-    @task
-    def manage(*args):
-        with cd(env.django_project_root):
-            params = {'args': " ".join(args)}
-            params.update(env)
-            virtenvrun('python manage.py  %(args)s --settings=%(django_project_settings)s' % params)
-
-
-    
 Se servidor novo, sem pacotes 
 
     fab *nome_app* setup
