@@ -30,7 +30,7 @@ setup(
     url='https://bitbucket.org/znc/znc-django-deploy',
     download_url='https://bitbucket.org/znc/znc-django-deploy/downloads',
     license='BSD License',
-    description="DJANGO + FAbric + GUnicorn + NGInx + Supervisor deployment",
+    description="DJANGO + Fabric + Gunicorn + Nginx + Supervisor deployment",
     long_description=open(os.path.join(os.path.dirname(__file__), 'README.md')).read(),
     author='ZNC Sistemas',
     author_email='contato@znc.com.br',

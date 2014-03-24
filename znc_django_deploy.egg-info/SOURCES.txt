@@ -2,6 +2,9 @@ MANIFEST.in
 README.md
 tasks_manager/__init__.py
 tasks_manager/tasks.py
+tasks_manager/utils.py
+tasks_manager/colors.py
+tasks_manager/generic_fabfile.py
 tasks_manager/conf/config_template.conf
 tasks_manager/conf/nginx.conf
 tasks_manager/conf/nginx_https.conf
