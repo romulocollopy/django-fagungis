@@ -17,3 +17,4 @@ blue = _wrap_with('34')
 magenta = _wrap_with('35')
 cyan = _wrap_with('36')
 white = _wrap_with('37')
+bold = lambda str: '\033[1m%s\033[0m' % str
