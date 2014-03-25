@@ -181,7 +181,7 @@ def _remove_project_files():
 
 def _virtenvrun(command):
     '''
-        Ativa um virtualenv
+        roda um comando no virtualenv
     '''
     activate = 'source %s/bin/activate' % env.virtenv
     run(activate + ' && ' + command, )
@@ -189,7 +189,7 @@ def _virtenvrun(command):
 
 def _virtenvsudo(command):
     '''
-        Ativa um virtualenv com sudo
+        roda um comando no virtualenv com sudo
     '''
     activate = 'source %s/bin/activate' % env.virtenv
     sudo(activate + ' && ' + command)  # , user=env.django_user)
