@@ -25,6 +25,9 @@ OPT_DJANGO_CONF_APPS = '/opt/django/configs/apps/%(project)s.conf'
 
 
 def _remote_open(remote_path):
+    '''
+        Função que abre um arquivo no servidor
+    '''
     output = StringIO()
     try:
         get(remote_path, output)
@@ -37,6 +40,9 @@ def _remote_open(remote_path):
 
 
 def _create_django_user():
+    '''
+        Função que cria e verifica se o usuário Django Existe
+    '''
     puts(blue("== Verifica / Cria usuário 'django' ...", 1, bg=107))
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         res = sudo('useradd -d %(django_user_home)s -m -r %(django_user)s -s /bin/bash' % env)
@@ -48,13 +54,15 @@ def _create_django_user():
 
 
 def _verify_sudo():
-    ''' we just check if the user is sudoers '''
+    ''' apenas verifica se o usuário é sudoers '''
     puts(blue("== Verificando SUDOER  ...", 1, bg=107))
     sudo('cd .')
 
 
 def _install_nginx():
-    # add nginx stable ppa
+    '''
+        Instala o NGINX
+    '''
     puts(blue("== Instalando NginX ..."))
     sudo("add-apt-repository -y ppa:nginx/stable")
     sudo("apt-get update")
@@ -63,7 +71,7 @@ def _install_nginx():
 
 
 def _install_dependencies():
-    ''' Ensure those Debian/Ubuntu packages are installed '''
+    ''' Assegura que os pacotes Debian / Ubuntu estão instalados '''
     puts(blue("== instalando pacotes do sistema  ...", 1, bg=107))
     packages = [
         "python-software-properties",
@@ -81,6 +89,9 @@ def _install_dependencies():
 
 
 def _install_requirements():
+    '''
+        Instala o requirements com pip install -r
+    '''
     puts(blue("== requirements.txt ... instalando pacotes python ...", 1, bg=107))
     ''' you must have a file called requirements.txt in your project root'''
     if 'requirements_file' in env and env.requirements_file:
@@ -88,18 +99,26 @@ def _install_requirements():
 
 
 def _install_gunicorn():
-    """ force gunicorn installation into your virtualenv, even if it's installed globally.
-    for more details: https://github.com/benoitc/gunicorn/pull/280 """
+    """
+        força a instalação gunicorn no seu virtualenv, mesmo que seja instalada a nível global.
+        para mais detalhes: https://github.com/benoitc/gunicorn/pull/280
+    """
     puts(blue("== instalando green unicorn ..."))
     _virtenvsudo('pip install -I gunicorn')
 
 
 def _install_virtualenv():
+    '''
+        Instala o Virtual Env
+    '''
     puts(blue("== Instalando virtualenv ..."))
     sudo('pip install virtualenv')
 
 
 def _create_virtualenv():
+    '''
+        Cria um virtualenv
+    '''
     puts(blue("== cria virtualenv ..."))
     sudo('virtualenv --%s %s' % (' --'.join(env.virtenv_options), env.virtenv))
 
@@ -136,10 +155,16 @@ def _setup_directories():
 
 
 def _directories_exist():
+    '''
+        verifica se o diretório do nginx htdocs existe
+    '''
     return exists(dirname(env.nginx_htdocs), use_sudo=True)
 
 
 def _remove_project_files():
+    '''
+        remove arquivos do projeto
+    '''
     sudo('rm -rf %s' % env.virtenv)
     sudo('rm -rf %s' % env.code_root)
     sudo('rm -rf %s' % env.gunicorn_logfile)
@@ -155,16 +180,25 @@ def _remove_project_files():
 
 
 def _virtenvrun(command):
+    '''
+        Ativa um virtualenv
+    '''
     activate = 'source %s/bin/activate' % env.virtenv
     run(activate + ' && ' + command, )
 
 
 def _virtenvsudo(command):
+    '''
+        Ativa um virtualenv com sudo
+    '''
     activate = 'source %s/bin/activate' % env.virtenv
     sudo(activate + ' && ' + command)  # , user=env.django_user)
 
 
 def _git_clone():
+    '''
+        Faz um clone de um repositório
+    '''
     puts(blue("== CLONE do repositório ...", 1, bg=107))
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         with cd(env.code_root):
@@ -178,6 +212,9 @@ def _git_clone():
 
 
 def _test_nginx_conf():
+    '''
+        Testa configurações do nginx
+    '''
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         res = sudo('nginx -t -c /etc/nginx/nginx.conf')
     if 'test failed' in res:
@@ -185,11 +222,16 @@ def _test_nginx_conf():
 
 
 def _reload_nginx():
+    '''
+        reaload no nginx ($ nginx -s reload)
+    '''
     sudo('nginx -s reload')
 
 
 def _upload_nginx_conf():
-    ''' upload nginx conf '''
+    '''
+        upload nas configurações do nginx
+    '''
     local_nginx_conf_file = 'nginx.conf'
     if env.nginx_https:
         local_nginx_conf_file = 'nginx_https.conf'
@@ -210,6 +252,9 @@ def _upload_nginx_conf():
 
 
 def _reload_supervisorctl():
+    '''
+        Reload no supervisorctl
+    '''
     #sudo('%(supervisorctl)s reread' % env)
     sudo('%(supervisorctl)s update' % env)
     #sudo('%(supervisorctl)s restart %(supervisor_program_name)s' % env)
@@ -217,7 +262,7 @@ def _reload_supervisorctl():
 
 
 def _upload_supervisord_conf():
-    ''' upload supervisor conf '''
+    ''' upload nas configurações do supervisord '''
     if isfile('conf/supervisord.conf'):
         ''' we use user defined supervisord.conf template '''
         template = 'conf/supervisord.conf'
@@ -230,6 +275,10 @@ def _upload_supervisord_conf():
 
 
 def _prepare_django_project():
+    '''
+        Prepara o projeto Django
+        roda o syncdb, migrate e collectstatic
+    '''
     with cd(env.django_project_root):
         _virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
         if env.south_used:
@@ -238,6 +287,9 @@ def _prepare_django_project():
 
 
 def _prepare_media_path():
+    '''
+        Cria o diretório de media
+    '''
     path = env.django_media_path.rstrip('/')
     sudo('mkdir -p %s' % path)
     sudo('chmod -R 775 %s' % path)
@@ -245,7 +297,7 @@ def _prepare_media_path():
 
 
 def _upload_rungunicorn_script():
-    ''' upload rungunicorn conf '''
+    ''' upload nas configurações do rungunicorn '''
     if isfile('scripts/rungunicorn.sh'):
         ''' we use user defined rungunicorn file '''
         template = 'scripts/rungunicorn.sh'
@@ -257,6 +309,9 @@ def _upload_rungunicorn_script():
 
 
 def _supervisor_restart():
+    '''
+        Restarta o supervisor
+    '''
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         res = sudo('%(supervisorctl)s restart %(supervisor_program_name)s' % env)
     if 'ERROR' in res:
@@ -301,11 +356,19 @@ def _read_config_file():
 
 
 def _generate_secret_key():
+    '''
+        Gera uma secret key randomicamente
+    '''
     secret_key = ''.join([random.SystemRandom().choice(string.printable[:-15]) for i in range(100)]).replace(' ', '')
     return secret_key
 
 
 def _set_manual_config_file(config=None):
+    '''
+        Seta o arquivo de configuração em
+        {{ django_user_home }}/configs/apps/{{ project_name }}.conf
+        manualmente, entre com um json
+    '''
     # path de destino
     destination_path = '%(django_user_home)s/configs/apps/%(project)s.conf' % env
 
@@ -388,6 +451,9 @@ def _set_config_file():
 
 
 def _print_configs(config):
+    '''
+        imprime um arquivo de confirmação '.conf'
+    '''
     for section in config.sections():
         puts(red(u"[%s]" % section))
         for option in config.items(section):
