@@ -3,6 +3,7 @@
 
 from ConfigParser import ConfigParser
 from datetime import datetime
+from random import randint
 
 from os.path import abspath, dirname, join
 
@@ -11,7 +12,7 @@ from fabric.contrib import console
 from fabric.operations import settings, sudo
 
 
-from .colors import red, green, blue
+from .colors import red, green, blue, bold
 from .utils import (
     _check_ssh_key,
     _create_django_user,
@@ -374,7 +375,7 @@ def manage(*args):
     with cd(env.django_project_root):
         params = {'args': " ".join(args)}
         params.update(env)
-        _virtenvrun('python manage.py  %(args)s --settings=%(django_project_settings)s' % params)
+        _virtenvrun('python manage.py %(args)s --settings=%(django_project_settings)s' % params)
 
 
 @task
@@ -385,3 +386,43 @@ def restart():
 @task
 def set_manual_config_file():
     _set_manual_config_file()
+
+
+@task
+def suggestion_of_port():
+    '''
+        Task que sugere uma porta para ser utilizada na aplicação
+    '''
+    chosen_port = randint(8000, 9001)
+    output = sudo("netstat -tlnp | grep 127.0.0.1 | awk '{print $4}' | cut -d : -f 2 | sort -k1 -n")
+    ports = []
+
+    for port in output.split(r'\n'):
+        try:
+            port = int(port)
+        except:
+            port = None
+        if port:
+            ports.append(port)
+
+    # variável que controla
+    # se o usuário já escolheu uma porta sugerida
+    chose = False
+    while not chose:
+        # variável que controla se
+        # a porta sorteada está livre
+        open_port = chosen_port in ports
+        # laço que sorteia uma nova
+        # porta caso a sorteada não estiver livre
+        while not open_port:
+            chosen_port = randint(8000, 9001)
+            open_port = not chosen_port in ports
+        # confirma se o usuário quer
+        # sortear outra porta
+        chose = not console.confirm(
+            green(
+                "porta livre: %s%s" % (bold(chosen_port), green('; sortear outra porta'))),
+            default=True
+        )
+    # imprime a porta escolhida
+    puts(green("porta escolhida %s" % bold(chosen_port)))
