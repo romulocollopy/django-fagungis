@@ -74,7 +74,7 @@ ___settings/production.py___
     get_config_or = gen_get_config_or(config)
 
 
-    SECRET_KEY = get_config_or('APP', 'secret_key')
+    SECRET_KEY = get_config_or('APP', 'secret_key', SECRET_KEY)
     
     DJANGO_HOME = os.path.join('/opt', 'django')
     STATIC_DIR = os.path.join(DJANGO_HOME, 'static_files', '{{ project_name }}')
@@ -101,12 +101,11 @@ ___settings/production.py___
 ___settings/utils.py___
 
     # coding: utf-8
-    import sys
     from ConfigParser import ConfigParser
-    
+
     OPT_DJANGO_CONF_APP = '/opt/django/configs/apps/{{ project_name }}.conf'
-    
-    
+
+
     def gen_get_config_or(config):
         def inner(section, option, default=None):
             try:
@@ -114,8 +113,8 @@ ___settings/utils.py___
             except:
                 return default
         return inner
-    
-    
+
+
     def read_config_file():
         '''
         tenta ler arquivo de configuração
@@ -125,15 +124,13 @@ ___settings/utils.py___
         config_file = None
         try:
             config_file = open(OPT_DJANGO_CONF_APP)
-        except IOError as e:
-            raise Exception(u"I/O error({0}): {1} - Possível arquivo inexistente.".format(e.errno, e.strerror))
         except:
-            raise Exception(u"Erro não esperado:", sys.exc_info()[0])
-    
+            return config
+
         config.readfp(config_file)
-    
+
         return config
-    
+        
 ----
 
 #### Se servidor novo, sem pacotes 
