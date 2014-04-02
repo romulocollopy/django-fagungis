@@ -18,9 +18,7 @@ def generic_fabfile(env, settings, ini, PROJECT_NAME, PROJECT_DIR, PROD_SETTINGS
         env.hosts = ini.get('DEPLOY', 'deploy_hosts').split(',')
         ##env.hosts = < LISTA DE HOSTS - PASSADO POR LINHA DE COMANDO>
         # additional packages to be installed on the server
-        env.additional_packages = [
-            'git-core',
-        ]
+        env.additional_packages = ini.get('DEPLOY', 'additional_packages').split(',')
         #  system user, owner of the processes and code on your server
         #  the user and it's home dir will be created if not present
         env.django_user = 'django'
