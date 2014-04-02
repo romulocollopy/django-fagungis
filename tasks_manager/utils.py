@@ -462,8 +462,17 @@ def _print_configs(config):
 
 
 def _create_postgre_user():
+    puts(blue(u"== Criar um usario no postgreSQL =="))
     db_user = console.prompt(u'Username:')
-    db_pass = console.prompt(u'Password [visivel]:')
+    confirm_pass = False
+    while not confirm_pass:
+        puts(blue(u"== Digite o password do usuario e a confirmacao =="))
+        puts(blue(u"== O Password sera visivel no console =="))
+        db_pass = console.prompt(u'Password:')
+        db_passc = console.prompt(u'cofirmacao:')
+        confirm_pass = db_pass == db_passc
+        if not confirm_pass:
+            puts(red(u"== Passwords Diferentes =="))
 
     options = [
         ('SUPERUSER', 'NOSUPERUSER'),
@@ -488,7 +497,8 @@ def _create_postgre_user():
 
 
 def _create_postgre_table():
-    db_user = console.prompt(u'OWNER:')
+    puts(blue(u"== Criar um database no postgreSQL =="))
+    db_user = console.prompt(u'Owner:')
     db_name = console.prompt(u'Database Name:')
     db_template = console.confirm(u'use "template_postgis"?')
 
