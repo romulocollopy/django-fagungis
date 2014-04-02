@@ -79,6 +79,7 @@ def _install_dependencies():
         "build-essential",
         "python-pip",
         "supervisor",
+        "git-core",
     ]
     sudo("apt-get update")
     sudo("apt-get -y install %s" % " ".join(packages))
@@ -458,3 +459,24 @@ def _print_configs(config):
         puts(red(u"[%s]" % section))
         for option in config.items(section):
             puts(red(u"%s=%s" % option))
+
+
+def _create_postgre_user():
+    """Creates role and database"""
+    db_user = console.prompt(u'Username:')
+    db_pass = console.prompt(u'Password [visivel]:')
+    sudo(u'''psql -c "CREATE USER %s WITH NOCREATEDB NOCREATEUSER ENCRYPTED PASSWORD E'%s'"''' % (db_user, db_pass), user='postgres')
+
+
+def _create_postgre_table():
+    db_user = console.prompt(u'OWNER:')
+    db_name = console.prompt(u'Database Name:')
+    db_template = console.confirm(u'use "template_postgis"?')
+
+    if db_template:
+        template = u" TEMPLATE template_postgis"
+    else:
+        template = u''
+
+    sudo(u'psql -c "CREATE DATABASE %s WITH OWNER %s%s;"' % (
+        db_name, db_user, template), user='postgres')

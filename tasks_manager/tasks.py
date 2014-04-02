@@ -12,10 +12,12 @@ from fabric.contrib import console
 from fabric.operations import settings, sudo
 
 
-from .colors import red, green, blue, bold
+from .colors import blue, bold, green, red
 from .utils import (
     _check_ssh_key,
     _create_django_user,
+    _create_postgre_table,
+    _create_postgre_user,
     _create_virtualenv,
     _directories_exist,
     _git_clone,
@@ -389,7 +391,17 @@ def set_manual_config_file():
 
 
 @task
-def suggestion_of_port():
+def create_postgre_table():
+    _create_postgre_table()
+
+
+@task
+def create_postgre_user():
+    _create_postgre_user()
+
+
+@task
+def check_port():
     '''
         Task que sugere uma porta para ser utilizada na aplicação
     '''
@@ -399,11 +411,9 @@ def suggestion_of_port():
 
     for port in output.split(r'\n'):
         try:
-            port = int(port)
+            ports.append(int(port))
         except:
-            port = None
-        if port:
-            ports.append(port)
+            pass
 
     # variável que controla
     # se o usuário já escolheu uma porta sugerida
