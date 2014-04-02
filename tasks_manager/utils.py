@@ -462,10 +462,29 @@ def _print_configs(config):
 
 
 def _create_postgre_user():
-    """Creates role and database"""
     db_user = console.prompt(u'Username:')
     db_pass = console.prompt(u'Password [visivel]:')
-    sudo(u'''psql -c "CREATE USER %s WITH NOCREATEDB NOCREATEUSER ENCRYPTED PASSWORD E'%s'"''' % (db_user, db_pass), user='postgres')
+
+    options = [
+        ('SUPERUSER', 'NOSUPERUSER'),
+        ('CREATEDB', 'NOCREATEDB'),
+        ('CREATEROLE', 'NOCREATEROLE'),
+        ('INHERIT', 'NOINHERIT'),
+        ('LOGIN', 'NOLOGIN'),
+    ]
+    confirm_options = []
+    for option in options:
+        ok = console.confirm(u'%s?' % option[0])
+        confirm_options.append(option[int(not ok)])
+
+    confirm_options = ' '.join(confirm_options)
+
+    sudo(
+        u'''psql -c "CREATE USER %s WITH %s ENCRYPTED PASSWORD E'%s'"''' % (
+            db_user, confirm_options, db_pass
+        ),
+        user='postgres'
+    )
 
 
 def _create_postgre_table():
@@ -478,5 +497,9 @@ def _create_postgre_table():
     else:
         template = u''
 
-    sudo(u'psql -c "CREATE DATABASE %s WITH OWNER %s%s;"' % (
-        db_name, db_user, template), user='postgres')
+    sudo(
+        u'psql -c "CREATE DATABASE %s WITH OWNER %s%s;"' % (
+            db_name, db_user, template
+        ),
+        user='postgres'
+    )
