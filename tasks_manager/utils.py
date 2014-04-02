@@ -1,4 +1,5 @@
 # coding: utf-8
+import getpass
 import logging
 import random
 import string
@@ -467,9 +468,8 @@ def _create_postgre_user():
     confirm_pass = False
     while not confirm_pass:
         puts(blue(u"== Digite o password do usuario e a confirmacao =="))
-        puts(blue(u"== O Password sera visivel no console =="))
-        db_pass = console.prompt(u'Password:')
-        db_passc = console.prompt(u'cofirmacao:')
+        db_pass = getpass.getpass(u'Password: ')
+        db_passc = getpass.getpass(u'cofirmacao: ')
         confirm_pass = db_pass == db_passc
         if not confirm_pass:
             puts(red(u"== Passwords Diferentes =="))
@@ -488,12 +488,17 @@ def _create_postgre_user():
 
     confirm_options = ' '.join(confirm_options)
 
-    sudo(
-        u'''psql -c "CREATE USER %s WITH %s ENCRYPTED PASSWORD E'%s'"''' % (
-            db_user, confirm_options, db_pass
-        ),
-        user='postgres'
+    ddl = "CREATE USER %s WITH %s ENCRYPTED PASSWORD E'%s'" % (db_user, confirm_options, db_pass)
+    puts(green('== DDL Gerada =='))
+    puts(
+        green(
+            ddl.replace(
+                "E'%s'" % db_pass,
+                "E'%s'" % ('*' * len(db_pass))
+            )
+        )
     )
+    sudo(u'psql -c "%s;"' % ddl, user='postgres', quiet=True)
 
 
 def _create_postgre_table():
@@ -507,9 +512,5 @@ def _create_postgre_table():
     else:
         template = u''
 
-    sudo(
-        u'psql -c "CREATE DATABASE %s WITH OWNER %s%s;"' % (
-            db_name, db_user, template
-        ),
-        user='postgres'
-    )
+    ddl = "CREATE DATABASE %s WITH OWNER %s%s" % (db_name, db_user, template)
+    sudo(u'psql -c "%s;"' % ddl, user='postgres')
