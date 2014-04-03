@@ -25,7 +25,9 @@ from .utils import (
     _install_gunicorn,
     _install_requirements,
     _install_virtualenv,
-    _prepare_django_project,
+    _setup_django_project,
+    _deploy_django_project,
+    _collect_static,
     _prepare_media_path,
     _print_configs,
     _reload_nginx,
@@ -94,12 +96,18 @@ def setup(dependencies="yes"):
     _install_virtualenv()
     _create_virtualenv()
     _install_requirements()
+
     _install_gunicorn()
+
     _upload_rungunicorn_script()
     #console.confirm('===========')
     _upload_supervisord_conf()
     #q!console.confirm('===========')
     _upload_nginx_conf()
+
+    _setup_django_project()
+    _collect_static()
+
     _reload_supervisorctl()
 
     end_time = datetime.now()
@@ -133,7 +141,10 @@ def deploy(new_apps=True, new_app_conf=True):
         _upload_nginx_conf()
         _upload_rungunicorn_script()
         _upload_supervisord_conf()
-    _prepare_django_project()
+
+    _deploy_django_project()
+    _collect_static()
+
     _prepare_media_path()  # fica porque pode ser alterado em uma review de código
     _supervisor_restart()
 
@@ -186,7 +197,7 @@ def git_pull():
 @task
 def reset_nginx():
     _upload_nginx_conf()
-    sudo('sudo service nginx restart')
+    sudo('service nginx restart')
 
 
 @task
