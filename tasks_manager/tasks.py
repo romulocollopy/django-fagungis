@@ -9,25 +9,24 @@ from os.path import abspath, dirname, join
 
 from fabric.api import abort, cd, env, hide, puts, task
 from fabric.contrib import console
-from fabric.operations import settings, sudo
+from fabric.operations import settings, sudo, put
 
 
 from .colors import blue, bold, green, red
 from .utils import (
     _check_ssh_key,
+    _collect_static,
     _create_django_user,
-    _create_postgre_table,
+    _create_postgre_database,
     _create_postgre_user,
     _create_virtualenv,
+    _deploy_django_project,
     _directories_exist,
     _git_clone,
     _install_dependencies,
     _install_gunicorn,
     _install_requirements,
     _install_virtualenv,
-    _setup_django_project,
-    _deploy_django_project,
-    _collect_static,
     _prepare_media_path,
     _print_configs,
     _reload_nginx,
@@ -37,6 +36,7 @@ from .utils import (
     _set_config_file,
     _set_manual_config_file,
     _setup_directories,
+    _setup_django_project,
     _supervisor_restart,
     _upload_nginx_conf,
     _upload_rungunicorn_script,
@@ -392,6 +392,25 @@ def manage(*args):
 
 
 @task
+def upload(*args):
+    if len(args) < 2:
+        path_local = console.prompt(u'Entre com o path local: ')
+        path_remote = console.prompt(u'Entre com o path remoto: ')
+    else:
+        path_local = args[0]
+        path_remote = args[1]
+
+    if len(args) > 2:
+        mode = int(args[2])
+    else:
+        puts(blue(u'Entre com um inteiro para o modo ex.:0755'))
+        path_remote = console.prompt(u'>> ', default=None)
+
+    with cd('/tmp'):
+        put(path_local, path_remote, mode=mode)
+
+
+@task
 def restart():
     _supervisor_restart()
 
@@ -402,8 +421,8 @@ def set_manual_config_file():
 
 
 @task
-def create_postgre_table():
-    _create_postgre_table()
+def create_postgre_database():
+    _create_postgre_database()
 
 
 @task

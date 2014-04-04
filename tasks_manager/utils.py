@@ -418,7 +418,7 @@ def _set_manual_config_file(config=None):
         # espera um json válido
         while not json_valido:
             # lê o json do prompt
-            json_string = console.prompt(u'Entre com o JSON:')
+            json_string = console.prompt(u'Entre com o JSON:', default='{}')
             try:
                 # verifica se o json é válido
                 json_dict = loads(json_string)
@@ -462,11 +462,9 @@ def _set_config_file():
             env.secret_key = config.get('APP', 'secret_key')
             generate_secret = False
     else:
-        template = '%s/conf/%s' % (base_path, "config_template.conf")
-        #upload_template(template, opt_django_config_file, context={}, backup=False, use_sudo=True)
         sudo('touch %s' % opt_django_config_file, user=env.django_user)
-
         config = _read_config_file()
+
     if generate_secret:
         env.secret_key = _generate_secret_key()
 
@@ -493,7 +491,7 @@ def _print_configs(config):
 
 def _create_postgre_user():
     puts(blue(u"== Criar um usario no postgreSQL =="))
-    db_user = console.prompt(u'Username:')
+    db_user = console.prompt(u'Username:', default=env.django_user)
     confirm_pass = False
     while not confirm_pass:
         puts(blue(u"== Digite o password do usuario e a confirmacao =="))
@@ -530,10 +528,10 @@ def _create_postgre_user():
     sudo(u'psql -c "%s;"' % ddl, user='postgres', quiet=True)
 
 
-def _create_postgre_table():
+def _create_postgre_database():
     puts(blue(u"== Criar um database no postgreSQL =="))
-    db_user = console.prompt(u'Owner:')
-    db_name = console.prompt(u'Database Name:')
+    db_user = console.prompt(u'Owner:', default=env.django_user)
+    db_name = console.prompt(u'Database Name:', default=env.project)
     db_template = console.confirm(u'use "template_postgis"?')
 
     if db_template:
