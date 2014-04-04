@@ -454,7 +454,7 @@ def _set_config_file():
 
 def _print_configs(config):
     '''
-        imprime um arquivo de confirmação '.conf'
+        imprime um arquivo de configuração '.conf'
     '''
     for section in config.sections():
         puts(red(u"[%s]" % section))
