@@ -123,6 +123,7 @@ def _create_virtualenv():
     '''
     puts(blue("== cria virtualenv ..."))
     sudo('virtualenv --%s %s' % (' --'.join(env.virtenv_options), env.virtenv))
+    sudo('chown %(django_user)s %(virtenv)s ' % env)
 
 
 def _setup_directories():
@@ -169,8 +170,8 @@ def _remove_project_files():
     '''
     sudo('rm -rf %s' % env.virtenv)
     sudo('rm -rf %s' % env.code_root)
-    sudo('rm -rf %s' % env.gunicorn_logfile)
-    sudo('rm -rf %s' % env.supervisor_stdout_logfile)
+    sudo('rm -rf %(django_user_home)s/logs/%(project)s_gunicorn.log' % env)
+    sudo('rm -rf %(django_user_home)s/logs/%(project)s_supervisord.log' % env)
     # remove nginx conf
     sudo('rm -rf %s' % env.nginx_conf_file)
     sudo('rm -rf /etc/nginx/sites-enabled/%s' % basename(env.nginx_conf_file))
@@ -276,15 +277,35 @@ def _upload_supervisord_conf():
     _reload_supervisorctl()
 
 
-def _prepare_django_project():
+def _setup_django_project():
     '''
+        OLD: _prepare_django_project():
         Prepara o projeto Django
-        roda o syncdb, migrate e collectstatic
+        roda o syncdb
+        O MIGRATIONS eh fake !
+    '''
+    with cd(env.django_project_root):
+        if env.south_used:
+            _virtenvrun('python manage.py syncdb --all --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
+            _virtenvrun('python manage.py migrate --fake --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
+        else:
+            _virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
+
+
+def _deploy_django_project():
+    '''
+        tal como o _setup_django_project
+        roda o syncdb, migrate
+        executando os migrations
     '''
     with cd(env.django_project_root):
         _virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
         if env.south_used:
             _virtenvrun('python manage.py migrate --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
+
+
+def _collect_static():
+    with cd(env.django_project_root):
         _virtenvsudo('python manage.py collectstatic --noinput --settings=%(django_project_settings)s' % env)
 
 
@@ -306,7 +327,7 @@ def _upload_rungunicorn_script():
     else:
         template = '%s/scripts/rungunicorn.sh' % base_path
     upload_template(template, env.rungunicorn_script,
-                    context=env, backup=False, use_sudo=True)
+                    context=env, backup=False,  use_sudo=True)
     sudo('chmod +x %s' % env.rungunicorn_script)
 
 
@@ -350,9 +371,9 @@ def _read_config_file():
     Return: objeto do tipo ConfigParser
     '''
 
-    OPT_DJANGO_CONF_APP = OPT_DJANGO_CONF_APPS % env
+    opt_django_config_file = OPT_DJANGO_CONF_APPS % env
     config = ConfigParser()
-    config_file = _remote_open(OPT_DJANGO_CONF_APP)
+    config_file = _remote_open(opt_django_config_file)
     config.readfp(config_file)
     return config
 
@@ -422,7 +443,8 @@ def _set_manual_config_file(config=None):
     fd = StringIO()
     fd.name = '%(project)s.conf' % env
     config.write(fd)
-    put(fd, destination_path)
+    put(fd, destination_path, use_sudo=True)
+    sudo('chown %(django_user)s ' % env + destination_path)
 
 
 def _set_config_file():
@@ -431,20 +453,27 @@ def _set_config_file():
     baseado no template "config_template.conf"
     e seta a secret_key
     '''
-    OPT_DJANGO_CONF_APP = OPT_DJANGO_CONF_APPS % env
+    opt_django_config_file = OPT_DJANGO_CONF_APPS % env
     # garante que a secret_key e uma app já existenete não seja trocada -> destroi users no banco
     generate_secret = True
-    if files.exists(OPT_DJANGO_CONF_APP, use_sudo=True, verbose=False):
+    if files.exists(opt_django_config_file, use_sudo=True, verbose=False):
         config = _read_config_file()
         if config.has_section('APP'):
             env.secret_key = config.get('APP', 'secret_key')
             generate_secret = False
+    else:
+        template = '%s/conf/%s' % (base_path, "config_template.conf")
+        #upload_template(template, opt_django_config_file, context={}, backup=False, use_sudo=True)
+        sudo('touch %s' % opt_django_config_file, user=env.django_user)
+
+        config = _read_config_file()
     if generate_secret:
         env.secret_key = _generate_secret_key()
 
     destination_path = '%(django_user_home)s/configs/apps/%(project)s.conf' % env
 
-    config.add_section('APP')
+    if not config.has_section('APP'):
+        config.add_section('APP')
     config.set('APP', 'secret_key', env.secret_key or '')
 
     _set_manual_config_file(config=config)

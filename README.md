@@ -12,6 +12,7 @@
     repository_type=git
 
     gunicorn_bind="127.0.0.1:{{ port }}"
+    additional_packages=''
 
     [APP]
     settings_file={{ project_name }}.settings.production

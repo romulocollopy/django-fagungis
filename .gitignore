@@ -34,4 +34,4 @@ pip-log.txt
 *.mo
 
 
-
+.egg-info
