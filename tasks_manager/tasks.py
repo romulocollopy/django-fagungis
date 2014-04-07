@@ -401,16 +401,34 @@ def manage(*args):
 
 @task
 def upload(*args):
-    if len(args) == 2:
-        path_local = args[0]
-        path_remote = args[1]
-    elif len(args) == 1:
-        mode = int(args[0])
-    else:
-        path_local = console.prompt(u'Entre com o path local: ')
-        path_remote = console.prompt(u'Entre com o path remoto: ')
+    args_len = len(args)
+    path_local = path_remote = mode = None
+
+    def get_path_local():
+        return console.prompt(u'Entre com o path local: ')
+
+    def get_path_remote():
+        return console.prompt(u'Entre com o path remoto: ')
+
+    def get_mode():
         puts(blue(u'Entre com um inteiro para o modo ex.:0755'))
-        mode = console.prompt(u'>> ', default='')
+        return console.prompt(u'>> ', default='')
+    if not args_len:
+        path_local = get_path_local()
+        path_remote = get_path_remote()
+        mode = get_mode()
+    elif args_len == 1:
+        path_local = get_path_local()
+        path_remote = get_path_remote()
+        mode = int(args[0])
+    elif args_len == 2:
+        mode = get_mode()
+        path_local = (args[0])
+        path_remote = (args[1])
+    else:
+        path_local = (args[0])
+        path_remote = (args[1])
+        mode = int(args[2])
 
     with cd('/tmp'):
         put(path_local, path_remote, mode=mode or None)
