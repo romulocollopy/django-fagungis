@@ -204,3 +204,9 @@ ___settings/utils.py___
 1. restart: Restarta o supervisor
 1. set_manual_config_file: Seta manualmente o arquivo de configuração através de um JSON
 1. suggestion_of_port: Task que sugere uma porta para ser utilizada na aplicação
+1. upload: Faz upload de um arquivo, pode se passar 1, 2 ou 3 parâmetros  
+    1. "1" parâmetro: Modo do arquivo. exemplo: 777
+    1. "2" parâmetros: path do arquivo local e path do arquivo remoto
+    1. "3" parâmetros: "2" + "1"
+    
+    se o não passar o path do remoto ele fará o upload em "/tmp"
