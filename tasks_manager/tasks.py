@@ -29,6 +29,8 @@ from .utils import (
     _install_virtualenv,
     _prepare_media_path,
     _print_configs,
+    _print_nginx_configs,
+    _print_supervisor_configs,
     _reload_nginx,
     _reload_supervisorctl,
     _remote_open,
@@ -373,14 +375,20 @@ def test_configuration(verbose=True):
 
 
 @task
-def print_configs():
+def print_configs(*args):
     OPT_DJANGO_CONF_APP = OPT_DJANGO_CONF_APPS % env
     fd = _remote_open(OPT_DJANGO_CONF_APP)
 
     config = ConfigParser()
     config.readfp(fd)
+    nginx = 'nginx' in args
+    supervisor = 'supervisor' in args
 
     _print_configs(config)
+    if nginx:
+        _print_nginx_configs()
+    if supervisor:
+        _print_supervisor_configs()
 
 
 @task
