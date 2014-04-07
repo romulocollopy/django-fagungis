@@ -489,6 +489,14 @@ def _print_configs(config):
             puts(red(u"%s=%s" % option))
 
 
+def _print_nginx_configs():
+    sudo('cat %s' % env.nginx_conf_file)
+
+
+def _print_supervisor_configs():
+    sudo('cat %s' % env.supervisord_conf_file)
+
+
 def _create_postgre_user():
     puts(blue(u"== Criar um usario no postgreSQL =="))
     db_user = console.prompt(u'Username:', default=env.django_user)
