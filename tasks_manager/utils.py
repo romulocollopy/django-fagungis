@@ -17,7 +17,7 @@ from fabric.contrib import console, files
 from fabric.contrib.files import exists, upload_template
 from fabric.operations import put, run, settings, sudo
 
-from .colors import blue, red, green
+from .colors import red, puts_red, puts_blue, puts_green
 
 base_path = dirname(abspath(__file__))
 
@@ -44,7 +44,7 @@ def _create_django_user():
     '''
         Função que cria e verifica se o usuário Django Existe
     '''
-    puts(blue("== Verifica / Cria usuário 'django' ...", 1, bg=107))
+    puts_blue("== Verifica / Cria usuário 'django' ...", 1, bg=107)
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         res = sudo('useradd -d %(django_user_home)s -m -r %(django_user)s -s /bin/bash' % env)
     if 'already exists' in res:
@@ -56,7 +56,7 @@ def _create_django_user():
 
 def _verify_sudo():
     ''' apenas verifica se o usuário é sudoers '''
-    puts(blue("== Verificando SUDOER  ...", 1, bg=107))
+    puts_blue("== Verificando SUDOER  ...", 1, bg=107)
     sudo('cd .')
 
 
@@ -64,7 +64,7 @@ def _install_nginx():
     '''
         Instala o NGINX
     '''
-    puts(blue("== Instalando NginX ..."))
+    puts_blue("== Instalando NginX ...")
     sudo("add-apt-repository -y ppa:nginx/stable")
     sudo("apt-get update")
     sudo("apt-get -y install nginx")
@@ -73,7 +73,7 @@ def _install_nginx():
 
 def _install_dependencies():
     ''' Assegura que os pacotes Debian / Ubuntu estão instalados '''
-    puts(blue("== instalando pacotes do sistema  ...", 1, bg=107))
+    puts_blue("== instalando pacotes do sistema  ...", 1, bg=107)
     packages = [
         "python-software-properties",
         "python-dev",
@@ -94,7 +94,7 @@ def _install_requirements():
     '''
         Instala o requirements com pip install -r
     '''
-    puts(blue("== requirements.txt ... instalando pacotes python ...", 1, bg=107))
+    puts_blue("== requirements.txt ... instalando pacotes python ...", 1, bg=107)
     ''' you must have a file called requirements.txt in your project root'''
     if 'requirements_file' in env and env.requirements_file:
         _virtenvsudo('pip install -r %s' % env.requirements_file)
@@ -105,7 +105,7 @@ def _install_gunicorn():
         força a instalação gunicorn no seu virtualenv, mesmo que seja instalada a nível global.
         para mais detalhes: https://github.com/benoitc/gunicorn/pull/280
     """
-    puts(blue("== instalando green unicorn ..."))
+    puts_blue("== instalando green unicorn ...")
     _virtenvsudo('pip install -I gunicorn')
 
 
@@ -113,7 +113,7 @@ def _install_virtualenv():
     '''
         Instala o Virtual Env
     '''
-    puts(blue("== Instalando virtualenv ..."))
+    puts_blue("== Instalando virtualenv ...")
     sudo('pip install virtualenv')
 
 
@@ -121,7 +121,7 @@ def _create_virtualenv():
     '''
         Cria um virtualenv
     '''
-    puts(blue("== cria virtualenv ..."))
+    puts_blue("== cria virtualenv ...")
     sudo('virtualenv --%s %s' % (' --'.join(env.virtenv_options), env.virtenv))
     sudo('chown %(django_user)s %(virtenv)s ' % env)
 
@@ -138,7 +138,7 @@ def _setup_directories():
             ...
 
     '''
-    puts(blue("== Criando árvore de diretórios do user django ...", 1, bg=107))
+    puts_blue("== Criando árvore de diretórios do user django ...", 1, bg=107)
 
     sudo('mkdir -p %(projects_path)s' % env)
     sudo('mkdir -p %(django_user_home)s/logs/' % env)
@@ -202,7 +202,7 @@ def _git_clone():
     '''
         Faz um clone de um repositório
     '''
-    puts(blue("== CLONE do repositório ...", 1, bg=107))
+    puts_blue("== CLONE do repositório ...", 1, bg=107)
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         with cd(env.code_root):
             res = sudo('git pull origin %(branch)s' % env, user=env.django_user)
@@ -339,9 +339,9 @@ def _supervisor_restart():
         res = sudo('%(supervisorctl)s restart %(supervisor_program_name)s' % env)
     if 'ERROR' in res:
 
-        print red("%s NOT STARTED!" % env.supervisor_program_name)
+        puts_red("%s NOT STARTED!" % env.supervisor_program_name)
     else:
-        print green("%s correctly started!" % env.supervisor_program_name)
+        puts_green("%s correctly started!" % env.supervisor_program_name)
 
 
 def _check_ssh_key():
@@ -349,18 +349,18 @@ def _check_ssh_key():
     Verifica/cria arquivo de chave SSH
     e mostra conteúdo para adicionar ao serviço de repo.
     '''
-    puts(blue("== Verifica chave SSH de acesso ao repo ...", 1, bg=107))
+    puts_blue("== Verifica chave SSH de acesso ao repo ...", 1, bg=107)
     res = files.exists("/opt/django/.ssh/id_rsa.pub", use_sudo=True, verbose=False)
     if not res:
 
-        puts(red("chave pública do user django não encontrada em /opt/django/.ssh/id_rsa.pub"))
+        puts_red("chave pública do user django não encontrada em /opt/django/.ssh/id_rsa.pub")
         res = console.confirm("Criar chave agora ?", default=True)
         if res:
             res = sudo('chown django -R /opt/django')
             sudo('ssh-keygen', user=env.django_user)
-    puts(red(" ==================[ L E I A  ]===================="))
-    puts(red(" !!!!!!!!!!!!!!! Chave pública utilizada !!!!!!!!!!"))
-    puts(red(" essa chave será utilizada para acessar o repositório."))
+    puts_red(" ==================[ L E I A  ]====================")
+    puts_red(" !!!!!!!!!!!!!!! Chave pública utilizada !!!!!!!!!!")
+    puts_red(" essa chave será utilizada para acessar o repositório.")
     sudo('cat /opt/django/.ssh/id_rsa.pub', user=env.django_user)
     res = console.confirm("Chave de deploy incluida no repo ?", default=True)
 
@@ -399,18 +399,18 @@ def _set_manual_config_file(config=None):
     if not config:
         config = _read_config_file()
     # imprime help do JSON
-    puts(blue(u"== Setar variaveis sensiveis =="))
-    puts(blue(u"== Entre com um JSON no formato =="))
-    puts(blue(u'{'))
-    puts(blue(u'    "Section": {'))
-    puts(blue(u'        "key": "value",'))
-    puts(blue(u'        "key2": "value"'))
-    puts(blue(u'    },'))
-    puts(blue(u'    "Section2": {'))
-    puts(blue(u'        "key": "value",'))
-    puts(blue(u'        "key2": "value"'))
-    puts(blue(u'    }'))
-    puts(blue(u'}'))
+    puts_blue(u"== Setar variaveis sensiveis ==")
+    puts_blue(u"== Entre com um JSON no formato ==")
+    puts_blue(u'{')
+    puts_blue(u'    "Section": {')
+    puts_blue(u'        "key": "value",')
+    puts_blue(u'        "key2": "value"')
+    puts_blue(u'    },')
+    puts_blue(u'    "Section2": {')
+    puts_blue(u'        "key": "value",')
+    puts_blue(u'        "key2": "value"')
+    puts_blue(u'    }')
+    puts_blue(u'}')
     confirma = False
     # espera confirmação de arquivo de config valido
     while not confirma:
@@ -424,7 +424,7 @@ def _set_manual_config_file(config=None):
                 json_dict = loads(json_string)
                 json_valido = True
             except:
-                puts(red(u'== JSON Invalido =='))
+                puts_red(u'== JSON Invalido ==')
         # escreve seções
         for section, dic in json_dict.items():
             try:
@@ -434,7 +434,7 @@ def _set_manual_config_file(config=None):
                 pass
             for key, value in dic.items():
                 config.set(section, key, value)
-        puts(blue(u"== Configuracao Final =="))
+        puts_blue(u"== Configuracao Final ==")
         # imprime as configs
         _print_configs(config)
 
@@ -484,9 +484,9 @@ def _print_configs(config):
         imprime um arquivo de configuração '.conf'
     '''
     for section in config.sections():
-        puts(red(u"[%s]" % section))
+        puts_red(u"[%s]" % section)
         for option in config.items(section):
-            puts(red(u"%s=%s" % option))
+            puts_red(u"%s=%s" % option)
 
 
 def _print_nginx_configs():
@@ -498,16 +498,16 @@ def _print_supervisor_configs():
 
 
 def _create_postgre_user():
-    puts(blue(u"== Criar um usario no postgreSQL =="))
+    puts_blue(u"== Criar um usario no postgreSQL ==")
     db_user = console.prompt(u'Username:', default=env.django_user)
     confirm_pass = False
     while not confirm_pass:
-        puts(blue(u"== Digite o password do usuario e a confirmacao =="))
+        puts_blue(u"== Digite o password do usuario e a confirmacao ==")
         db_pass = getpass.getpass(u'Password: ')
         db_passc = getpass.getpass(u'cofirmacao: ')
         confirm_pass = db_pass == db_passc
         if not confirm_pass:
-            puts(red(u"== Passwords Diferentes =="))
+            puts_red(u"== Passwords Diferentes ==")
 
     options = [
         ('SUPERUSER', 'NOSUPERUSER'),
@@ -524,20 +524,13 @@ def _create_postgre_user():
     confirm_options = ' '.join(confirm_options)
 
     ddl = "CREATE USER %s WITH %s ENCRYPTED PASSWORD E'%s'" % (db_user, confirm_options, db_pass)
-    puts(green('== DDL Gerada =='))
-    puts(
-        green(
-            ddl.replace(
-                "E'%s'" % db_pass,
-                "E'%s'" % ('*' * len(db_pass))
-            )
-        )
-    )
+    puts_green('== DDL Gerada ==')
+    puts_green(ddl.replace("E'%s'" % db_pass, "E'%s'" % ('*' * len(db_pass))))
     sudo(u'psql -c "%s;"' % ddl, user='postgres', quiet=True)
 
 
 def _create_postgre_database():
-    puts(blue(u"== Criar um database no postgreSQL =="))
+    puts_blue(u"== Criar um database no postgreSQL ==")
     db_user = console.prompt(u'Owner:', default=env.django_user)
     db_name = console.prompt(u'Database Name:', default=env.project)
     db_template = console.confirm(u'use "template_postgis"?')

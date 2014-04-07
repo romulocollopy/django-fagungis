@@ -12,7 +12,7 @@ from fabric.contrib import console
 from fabric.operations import settings, sudo, put
 
 
-from .colors import blue, bold, green, red
+from .colors import bold, green, red, puts_red, puts_green, puts_blue
 from .utils import (
     _check_ssh_key,
     _collect_static,
@@ -60,7 +60,7 @@ def setup(dependencies="yes"):
     SETUP
     fab preject_name setup:dependencies=False
     '''
-    puts(red(' -------- I N I C I A N D O    S E T U P  ...', bg=104))
+    puts_red(' -------- I N I C I A N D O    S E T U P  ...', bg=104)
 
     #  test configuration start
     if not test_configuration():
@@ -69,7 +69,7 @@ def setup(dependencies="yes"):
             #  test configuration end
 
     # inicio SETUP
-    puts(green('Iniciando setup...', bg='107'))
+    puts_green('Iniciando setup...', bg='107')
     if env.ask_confirmation:
         if not console.confirm("Are you sure you want to setup %s?" % red(env.project.upper()), default=False):
             abort("Aborting at user request.")
@@ -84,10 +84,10 @@ def setup(dependencies="yes"):
     # todos os diretórios de projeto estão criados
     if not _directories_exist():  # verifica se existe ht_docs
         if dependencies == "yes":
-            puts(red('== Instalando pacotes do sistema ...'))
+            puts_red('== Instalando pacotes do sistema ...')
             _install_dependencies()  # nao instala pips soh packs + env.additional_packages
         else:
-            puts(red('Pacotes do sistema não serão instalados.'))
+            puts_red('Pacotes do sistema não serão instalados.')
 
         _create_django_user()
         _setup_directories()
@@ -121,7 +121,7 @@ def setup(dependencies="yes"):
 @task
 def deploy(new_apps=True, new_app_conf=True):
     #  test configuration start
-    puts(green('Iniciando DEPLOY...', bg=107))
+    puts_green('Iniciando DEPLOY...', bg=107)
     if not test_configuration():
         if not console.confirm("Configuration test %s! Do you want to continue?" % red('failed'), default=False):
             abort("Aborting at user request.")
@@ -130,7 +130,7 @@ def deploy(new_apps=True, new_app_conf=True):
     if env.ask_confirmation:
         if not console.confirm("Are you sure you want to deploy in %s?" % red(env.project.upper()), default=False):
             abort("Aborting at user request.")
-    puts(green('Start deploy...'))
+    puts_green('Start deploy...')
     start_time = datetime.now()
 
     if env.repository_type == 'hg':
@@ -166,7 +166,7 @@ def remove():
     if env.ask_confirmation:
         if not console.confirm("Are you sure you want to remove %s?" % red(env.project.upper()), default=False):
             abort("Aborting at user request.")
-    puts(green('Start remove...'))
+    puts_green('Start remove...')
     start_time = datetime.now()
 
     _remove_project_files()
@@ -187,7 +187,7 @@ def hg_pull():
 
 @task
 def git_pull():
-    puts(blue('== Git Pull  - Baixando aplicação ...', 1, bg=107))
+    puts_blue('== Git Pull  - Baixando aplicação ...', 1, bg=107)
     with cd(env.code_root):
         with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
             res = sudo('git checkout -b %(branch)s' % env, user=env.django_user)
@@ -411,7 +411,7 @@ def upload(*args):
         return console.prompt(u'Entre com o path remoto: ')
 
     def get_mode():
-        puts(blue(u'Entre com um inteiro para o modo ex.:0755'))
+        puts_blue(u'Entre com um inteiro para o modo ex.:0755')
         return console.prompt(u'>> ', default='')
     if not args_len:
         path_local = get_path_local()
@@ -489,4 +489,4 @@ def check_port():
             default=True
         )
     # imprime a porta escolhida
-    puts(green("porta escolhida %s" % bold(chosen_port)))
+    puts_green("porta escolhida %s" % bold(chosen_port))
