@@ -195,6 +195,8 @@ ___settings/utils.py___
 1. reset_nginx: Reseta o NGINX
 1. test_configuration: Roda os testes de configruação
 1. print_configs: Imprime o arquivo de configuração do projeto
+    > tem 2 parâmetros nginx: printa as congigs do nginx e superviort: printa as consigs do supervidor
+    > fab znc_dummy print_configs:supervisor,nginx
 1. manage: Roda
 1. restart: Restarta o supervisor
 1. set_manual_config_file: Seta manualmente o arquivo de configuração através de um JSON
