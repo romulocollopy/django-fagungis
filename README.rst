@@ -34,11 +34,11 @@ Using pip
 ---------
 If you have pip install available on your system, just type::
 
-    pip install git+https://github.com/damianmoore/django-fagungis.git
+    pip install git+https://github.com/cadu-leite/django-fagungis.git
 
 If you've already got an old version of Fagungis, and want to upgrade, use::
 
-    pip install -U git+https://github.com/damianmoore/django-fagungis.git
+    pip install -U git+https://github.com/cadu-leite/django-fagungis.git
 
 Installing from a directory
 ---------------------------
@@ -119,7 +119,7 @@ Clone example_fabfile.py::
 
 or::
 
-    wget -O fabfile.py https://raw.github.com/damianmoore/django-fagungis/master/fagungis/example_fabfile.py
+    wget -O fabfile.py https://raw.github.com/cadu-leite/django-fagungis/master/fagungis/example_fabfile.py
 
 
 Now apply some changes to earlier cloned fabfile.py file in your project root:
