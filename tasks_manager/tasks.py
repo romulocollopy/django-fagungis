@@ -5,7 +5,7 @@ from ConfigParser import ConfigParser
 from datetime import datetime
 from random import randint
 
-from os.path import abspath, dirname, join
+from os.path import abspath, dirname, join, isfile
 
 from fabric.api import abort, cd, env, hide, puts, task
 from fabric.contrib import console
@@ -490,3 +490,23 @@ def check_port():
         )
     # imprime a porta escolhida
     puts_green("porta escolhida %s" % bold(chosen_port))
+
+
+@task
+def list_authorized_keys():
+    sudo('cat ~/.ssh/authorized_keys')
+
+
+@task
+def add_authorized_key(ssh_file='id_rsa.pub', server_ssh__dir='/home/znc/.ssh'):
+    puts_blue(ssh_file)
+    if isfile(ssh_file):
+        with cd('/home/znc/.ssh/'):
+            put(ssh_file, "temp.pub", use_sudo=True)
+            sudo('cat temp.pub >> authorized_keys')
+            sudo('rm temp.pub')
+    else:
+        puts_red('Não é um arquivo')
+
+
+
