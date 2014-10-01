@@ -436,6 +436,9 @@ def upload(*args):
 
 @task
 def restart():
+    '''
+    restart projeto através do supervisorctl stop/start
+    '''
     _supervisor_restart()
 
 
