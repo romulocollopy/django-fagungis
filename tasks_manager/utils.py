@@ -336,12 +336,20 @@ def _supervisor_restart():
         Restarta o supervisor
     '''
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
-        res = sudo('%(supervisorctl)s restart %(supervisor_program_name)s' % env)
-    if 'ERROR' in res:
-
-        puts_red("%s NOT STARTED!" % env.supervisor_program_name)
-    else:
-        puts_green("%s correctly started!" % env.supervisor_program_name)
+        res = sudo('%(supervisorctl)s stop %(supervisor_program_name)s' % env)
+        puts_blue("Parando App: ---------------------------------")
+        puts_blue(res)
+        puts_red("===============================================")
+        #start app
+        res = sudo('%(supervisorctl)s start %(supervisor_program_name)s' % env)
+        if 'ERROR' in res:
+            puts_red("%s - OOOPS MSG POSSUI UM ERRO -------------" % env.supervisor_program_name)
+        else:
+            puts_green("* * * * * * * * * * * * * * * * * * * * *")
+            puts_green("%s - APP RODANDO !! * * * * * * * * * * *" % env.supervisor_program_name)
+            puts_green("* * * * * * * * * * * * * * * * * * * * *")
+        puts_red(res)
+        puts_red("FIM SUPERVISOR RESTART (STOP/START) ============")
 
 
 def _check_ssh_key():
