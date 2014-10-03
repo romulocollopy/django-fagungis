@@ -44,6 +44,7 @@ def _create_django_user():
     '''
         Função que cria e verifica se o usuário Django Existe
     '''
+    puts_blue(u" Cria usuário __django__ ...", 1, bg=107)
     puts_blue("== Verifica / Cria usuário 'django' ...", 1, bg=107)
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         res = sudo('useradd -d %(django_user_home)s -m -r %(django_user)s -s /bin/bash' % env)
@@ -237,6 +238,7 @@ def _upload_nginx_conf():
     '''
         upload nas configurações do nginx
     '''
+    puts_blue(u" enviando arquivo de conf. do NGINX  ...", 1, bg=107)
     local_nginx_conf_file = 'nginx.conf'
     if env.nginx_https:
         local_nginx_conf_file = 'nginx_https.conf'
@@ -268,6 +270,7 @@ def _reload_supervisorctl():
 
 def _upload_supervisord_conf():
     ''' upload nas configurações do supervisord '''
+    puts_blue("Enviando arquivo de conf. do supervisor ...", 1, bg=107)
     if isfile('conf/supervisord.conf'):
         ''' we use user defined supervisord.conf template '''
         template = 'conf/supervisord.conf'
@@ -286,6 +289,7 @@ def _setup_django_project():
         roda o syncdb
         O MIGRATIONS eh fake !
     '''
+    puts_blue(u" SETUP: Executando syncdb / migrations  --all ...", 1, bg=107)
     with cd(env.django_project_root):
         if env.south_used:
             _virtenvrun('python manage.py syncdb --all --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
@@ -300,6 +304,7 @@ def _deploy_django_project():
         roda o syncdb, migrate
         executando os migrations
     '''
+    puts_blue(u" deploy: Executando syncdb / migrations ...", 1, bg=107)
     with cd(env.django_project_root):
         _virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
         if env.south_used:
@@ -307,6 +312,8 @@ def _deploy_django_project():
 
 
 def _collect_static():
+
+    puts_blue(u" 'coletando' arquivos estáticos ...", 1, bg=107)
     with cd(env.django_project_root):
         _virtenvsudo('python manage.py collectstatic --noinput --settings=%(django_project_settings)s' % env)
 
@@ -315,6 +322,8 @@ def _prepare_media_path():
     '''
         Cria o diretório de media
     '''
+    puts_blue(u" Prepara diretórios para receber 'media files' ...", 1, bg=107)
+    puts_blue(u" Diretório criado em: %s " % env.django_media_path.rstrip('/'))
     path = env.django_media_path.rstrip('/')
     sudo('mkdir -p %s' % path)
     sudo('chmod -R 775 %s' % path)
@@ -323,6 +332,7 @@ def _prepare_media_path():
 
 def _upload_rungunicorn_script():
     ''' upload nas configurações do rungunicorn '''
+    puts_blue(" Copiando SCRIPT do gunicorn ...", 1, bg=107)
     if isfile('scripts/rungunicorn.sh'):
         ''' we use user defined rungunicorn file '''
         template = 'scripts/rungunicorn.sh'
@@ -337,13 +347,23 @@ def _supervisor_restart():
     '''
         Restarta o supervisor
     '''
+    puts_blue(" __restart__ da aplicação via supervisor ...", 1, bg=107)
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
-        res = sudo('%(supervisorctl)s restart %(supervisor_program_name)s' % env)
-    if 'ERROR' in res:
+        res = sudo('%(supervisorctl)s stop %(supervisor_program_name)s' % env)
+        puts_blue("-> Parando App:")
+        puts_blue(" Mensagem do supervisor: %s " % (res))
 
-        puts_red("%s NOT STARTED!" % env.supervisor_program_name)
-    else:
-        puts_green("%s correctly started!" % env.supervisor_program_name)
+        #start app
+        res = sudo('%(supervisorctl)s start %(supervisor_program_name)s' % env)
+        puts_blue("-> Reiniciando a App:")
+        if 'ERROR' in res:
+            puts_red("-> Erro ao reiniciar a app : %s" % env.supervisor_program_name)
+        else:
+            puts_green("==========================================")
+            puts_green("      %s   iniciado com sucesso           " % env.supervisor_program_name)
+            puts_green("==========================================")
+
+        puts_blue(" Mensagem do supervisor: %s " % (res))
 
 
 def _check_ssh_key():

@@ -437,6 +437,9 @@ def upload(*args):
 
 @task
 def restart():
+    '''
+    restart projeto através do supervisorctl stop/start
+    '''
     _supervisor_restart()
 
 
@@ -500,6 +503,9 @@ def list_authorized_keys():
 
 @task
 def add_authorized_key(ssh_file='id_rsa.pub', server_ssh__dir='/home/znc/.ssh'):
+    '''
+    Adiciona chave SSH ao authorized_keys do servidor
+    '''
     puts_blue(ssh_file)
     if isfile(ssh_file):
         with cd('/home/znc/.ssh/'):
