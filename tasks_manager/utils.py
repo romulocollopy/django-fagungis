@@ -170,6 +170,7 @@ def _remove_project_files():
     '''
     sudo('rm -rf %s' % env.virtenv)
     sudo('rm -rf %s' % env.code_root)
+    sudo('rm -rf %(nginx_htdocs)s' % env)
     sudo('rm -rf %(django_user_home)s/logs/%(project)s_gunicorn.log' % env)
     sudo('rm -rf %(django_user_home)s/logs/%(project)s_supervisord.log' % env)
     # remove nginx conf
@@ -208,7 +209,8 @@ def _git_clone():
             res = sudo('git pull origin %(branch)s' % env, user=env.django_user)
     logging.error('code root not exists: %s' % res)
     if 'No such file or directory' in res:
-        sudo('git clone %(repository)s %(code_root)s' % env, user=env.django_user)
+        with cd('%(django_user_home)s' % env):
+            sudo('git clone %(repository)s %(code_root)s' % env, user=env.django_user)
     #with cd(env.code_root):
     #    sudo('git config --global user.email you@example.com', user=env.django_user)
     #    sudo('git config --global user.name foo', user=env.django_user)

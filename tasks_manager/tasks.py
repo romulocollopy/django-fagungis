@@ -82,15 +82,16 @@ def setup(dependencies="yes"):
     # pacotes do sistema estão indtalados
     # user django  criado
     # todos os diretórios de projeto estão criados
-    if not _directories_exist():  # verifica se existe ht_docs
-        if dependencies == "yes":
-            puts_red('== Instalando pacotes do sistema ...')
-            _install_dependencies()  # nao instala pips soh packs + env.additional_packages
-        else:
-            puts_red('Pacotes do sistema não serão instalados.')
+    # if not _directories_exist():  # verifica se existe ht_docs
 
-        _create_django_user()
-        _setup_directories()
+    if dependencies == "yes":
+        puts_red('== Instalando pacotes do sistema ...')
+        _install_dependencies()  # nao instala pips soh packs + env.additional_packages
+    else:
+        puts_red('Pacotes do sistema não serão instalados.')
+
+    _create_django_user()
+    _setup_directories()
     _check_ssh_key()  # verifica / cria chave pública : cadu 10140210
 
     _git_clone()
