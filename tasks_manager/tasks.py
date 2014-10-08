@@ -309,12 +309,14 @@ def test_configuration(verbose=True):
         errors.append('"nginx_conf_file" configuration missing')
     elif verbose:
         parameters_info.append(('nginx_conf_file', env.nginx_conf_file))
-    if 'nginx_client_max_body_size' not in env or not env.nginx_client_max_body_size:
-        env.nginx_client_max_body_size = 10
-    elif not isinstance(env.nginx_client_max_body_size, int):
+    if not isinstance(env.nginx_client_max_body_size, int):
         errors.append('"nginx_client_max_body_size" must be an integer value')
     if verbose:
         parameters_info.append(('nginx_client_max_body_size', env.nginx_client_max_body_size))
+    if not isinstance(env.proxy_read_timeout, int):
+        errors.append('"proxy_read_timeout" must be an integer value')
+    if verbose:
+        parameters_info.append(('proxy_read_timeout', env.proxy_read_timeout))
     if 'nginx_htdocs' not in env or not env.nginx_htdocs:
         errors.append('"nginx_htdocs" configuration missing')
     elif verbose:

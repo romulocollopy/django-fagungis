@@ -564,3 +564,12 @@ def _create_postgre_database():
 
     ddl = "CREATE DATABASE %s WITH OWNER %s%s" % (db_name, db_user, template)
     sudo(u'psql -c "%s;"' % ddl, user='postgres')
+
+
+def gen_get_config_or(config):
+    def inner(section, option, default=None):
+        try:
+            return config.get(section, option)
+        except:
+            return default
+    return inner

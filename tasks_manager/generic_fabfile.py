@@ -1,10 +1,14 @@
 # coding: utf-8
 from os.path import join
+from .utils import gen_get_config_or
 
 
 def generic_fabfile(env, settings, ini, PROJECT_NAME, PROJECT_DIR, PROD_SETTINGS):
     def inner():
-        env.repository_type = 'git'
+
+        get_config_or = gen_get_config_or(ini)
+
+        env.repository_type = get_config_or('DEPLOY', 'repository_type', 'git')
         env.secret_key = settings.SECRET_KEY
 
         if 'branch' not in env:
@@ -93,7 +97,16 @@ def generic_fabfile(env, settings, ini, PROJECT_NAME, PROJECT_DIR, PROD_SETTINGS
         env.nginx_conf_file = '%(django_user_home)s/configs/nginx/%(project)s.conf' % env
 
         # Maximum accepted body size of client request, in MB
-        env.nginx_client_max_body_size = 10
+        env.nginx_client_max_body_size = int(
+            get_config_or('DEPLOY', 'nginx_client_max_body_size', 10)
+        )
+
+        # Timeout configurarion (seconds)
+        # for the proxy (gunicorn) and nginx to respond
+        env.proxy_read_timeout = int(
+            get_config_or('DEPLOY', 'proxy_read_timeout', 60)
+        )
+
         env.nginx_htdocs = '%(django_user_home)s/htdocs' % env
         # will configure nginx with ssl on, your certificate must be installed
         # more info here: http://wiki.nginx.org/HttpSslModule

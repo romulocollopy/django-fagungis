@@ -12,4 +12,5 @@ source %(virtenv)s/bin/activate
 exec %(virtenv)s/bin/gunicorn %(project)s.wsgi -w %(gunicorn_workers)s \
     --user=%(django_user)s --group=%(django_user_group)s \
     --bind=%(gunicorn_bind)s --log-level=%(gunicorn_loglevel)s \
+    --timeout=%(proxy_read_timeout)s \
     --log-file=$LOGFILE 2>>$LOGFILE
