@@ -289,10 +289,10 @@ def _setup_django_project():
         roda o syncdb
         O MIGRATIONS eh fake !
     '''
-    puts_blue(u" SETUP: Executando syncdb / migrations  --all ...", 1, bg=107)
+    puts_blue(u" SETUP: Executando syncdb / migrations", 1, bg=107)
     with cd(env.django_project_root):
         if env.south_used:
-            _virtenvrun('python manage.py syncdb --all --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
+            _virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
             _virtenvrun('python manage.py migrate --fake --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
         else:
             _virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
