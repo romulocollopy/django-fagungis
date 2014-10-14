@@ -1,6 +1,8 @@
 # coding: utf-8
 import getpass
+import json
 import logging
+import os.path
 import random
 import string
 import sys  # mostrar mesgs de erro
@@ -205,16 +207,13 @@ def _git_clone():
         Faz um clone de um repositório
     '''
     puts_blue("== CLONE do repositório ...", 1, bg=107)
+
     with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
-        with cd(env.code_root):
-            res = sudo('git pull origin %(branch)s' % env, user=env.django_user)
-    logging.error('code root not exists: %s' % res)
-    if 'No such file or directory' in res:
         with cd('%(django_user_home)s' % env):
             sudo('git clone %(repository)s %(code_root)s' % env, user=env.django_user)
-    #with cd(env.code_root):
-    #    sudo('git config --global user.email you@example.com', user=env.django_user)
-    #    sudo('git config --global user.name foo', user=env.django_user)
+    with cd(env.code_root):
+        sudo('git fetch' % env, user=env.django_user)
+        sudo('git checkout %(branch)s' % env, user=env.django_user)
 
 
 def _test_nginx_conf():
@@ -282,6 +281,79 @@ def _upload_supervisord_conf():
     _reload_supervisorctl()
 
 
+def _atualiza_projs(database_name):
+    if os.path.exists('projs.json'):
+        j = json.load(open('projs.json'))
+        query_file_path = '/tmp/%(project)s_query.sql' % env
+        fd = StringIO()
+        fd.name = '%(project)s_query.sql' % env
+        sudo('touch %s' % query_file_path)
+        for key, value in j.items():
+            fd.write(value['postgis'] + '\n')
+            srid_key = '<%s>' % key
+            with settings(warn_only=True):
+                res = sudo('grep -H "%s" /usr/share/proj/epsg ' % srid_key)
+                if not srid_key in res:
+                    string_epsg = "%s %s" % (srid_key, value['proj4text'])
+                    sudo("echo '%s' >> %s" % (string_epsg, '/usr/share/proj/epsg'))
+
+        put(fd, query_file_path, use_sudo=True)
+    sudo("psql %s < %s" % (database_name, query_file_path), user='postgres')
+
+
+def _setup_database():
+    quer_criar_template = False
+    quer_criar_user = False
+    quer_criar_db = False
+    puts_blue("Setup do Bano de Dados")
+    with cd('%(django_user_home)s' % env):
+        if 'postgis' in env.django_settings.DATABASES['default']['ENGINE']:
+            # template postgis existe
+            with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
+                res = sudo('psql -tAc "SELECT \'template_postgis_encontrado\';" template_postgis', user='postgres')
+                if not 'template_postgis_encontrado' in res:
+                    # quer criar o template postgis?
+                    quer_criar_template = console.confirm(u'quer criar o template postgis?')
+        if quer_criar_template:
+            script_path = '%s/scripts/create_template_postgis-debian.sh' % base_path
+            remote = '/opt/django/create_template_postgis-debian.sh'
+            if not files.exists(remote, use_sudo=True, verbose=False):
+                put(
+                    open(script_path),
+                    remote,
+                    use_sudo=True
+                )
+            sudo('/bin/bash %s' % remote, user='postgres')
+            # cria template postgis
+
+        rolname = env.django_settings.DATABASES['default']['USER']
+        # user existe
+        with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
+            res = sudo(
+                'psql -tAc \
+                "SELECT \'user_encontrado\' FROM ( \
+                    SELECT count(*) FROM pg_roles WHERE rolname=\'%s\'\
+                ) AS COUNT WHERE COUNT.count >= 1;"' % rolname,
+                user='postgres'
+            )
+            if not 'user_encontrado' in res:
+                quer_criar_user = console.confirm(u'quer criar o user %s?' % rolname)
+
+        if quer_criar_user:
+            _create_postgre_user()
+
+        database = env.django_settings.DATABASES['default']['NAME']
+        # user existe
+        with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
+            res = sudo('psql -tAc "SELECT \'BD_encontrado\';" %s' % database, user='postgres')
+            if not 'BD_encontrado' in res:
+                quer_criar_db = console.confirm(u'quer criar o Database %s?' % database)
+        if quer_criar_db:
+            _create_postgre_database()
+
+        _atualiza_projs(database)
+
+
 def _setup_django_project():
     '''
         OLD: _prepare_django_project():
@@ -292,7 +364,7 @@ def _setup_django_project():
     puts_blue(u" SETUP: Executando syncdb / migrations", 1, bg=107)
     with cd(env.django_project_root):
         if env.south_used:
-            _virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
+            _virtenvrun('python manage.py syncdb --all --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
             _virtenvrun('python manage.py migrate --fake --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
         else:
             _virtenvrun('python manage.py syncdb --noinput --verbosity=1 --settings=%(django_project_settings)s' % env)
