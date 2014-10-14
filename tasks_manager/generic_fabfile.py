@@ -11,6 +11,8 @@ def generic_fabfile(env, settings, ini, PROJECT_NAME, PROJECT_DIR, PROD_SETTINGS
         env.repository_type = get_config_or('DEPLOY', 'repository_type', 'git')
         env.secret_key = settings.SECRET_KEY
 
+        env.django_settings = settings
+
         if 'branch' not in env:
             env.branch = 'master'
         #  name of your project - no spaces, no special chars
