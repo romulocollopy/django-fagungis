@@ -37,6 +37,7 @@ from .utils import (
     _remove_project_files,
     _set_config_file,
     _set_manual_config_file,
+    _setup_database,
     _setup_directories,
     _setup_django_project,
     _supervisor_restart,
@@ -108,6 +109,7 @@ def setup(dependencies="yes"):
     #q!console.confirm('===========')
     _upload_nginx_conf()
 
+    _setup_database()
     _setup_django_project()
     _collect_static()
 
@@ -518,4 +520,7 @@ def add_authorized_key(ssh_file='id_rsa.pub', server_ssh__dir='/home/znc/.ssh'):
         puts_red('Não é um arquivo')
 
 
-
+@task
+def drop_template_postgis():
+    sudo("psql -c \"UPDATE pg_database SET datistemplate='false' WHERE datname='template_postgis';\"", user='postgres')
+    sudo("dropdb template_postgis", user='postgres')
