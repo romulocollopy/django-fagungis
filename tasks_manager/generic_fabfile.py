@@ -11,6 +11,10 @@ def generic_fabfile(env, settings, ini, PROJECT_NAME, PROJECT_DIR, PROD_SETTINGS
         env.repository_type = get_config_or('DEPLOY', 'repository_type', 'git')
         env.secret_key = settings.SECRET_KEY
 
+        env.proj_ini = ini
+
+        env.django_settings = settings
+
         if 'branch' not in env:
             env.branch = 'master'
         #  name of your project - no spaces, no special chars
@@ -93,7 +97,8 @@ def generic_fabfile(env, settings, ini, PROJECT_NAME, PROJECT_DIR, PROD_SETTINGS
 
         # START nginx settings ###
         # 'camargocorrea.znc.com.br'  # Only domain name, without 'www' or 'http://'
-        env.nginx_server_name = " ".join(settings.ALLOWED_HOSTS)
+        allowed_hosts = get_config_or('COPY_APP', 'allowed_hosts', default=",".join(settings.ALLOWED_HOSTS))
+        env.nginx_server_name = " ".join(allowed_hosts.split(','))
         env.nginx_conf_file = '%(django_user_home)s/configs/nginx/%(project)s.conf' % env
 
         # Maximum accepted body size of client request, in MB

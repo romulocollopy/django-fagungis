@@ -37,6 +37,7 @@ from .utils import (
     _remove_project_files,
     _set_config_file,
     _set_manual_config_file,
+    _setup_database,
     _setup_directories,
     _setup_django_project,
     _supervisor_restart,
@@ -108,6 +109,7 @@ def setup(dependencies="yes"):
     #q!console.confirm('===========')
     _upload_nginx_conf()
 
+    _setup_database()
     _setup_django_project()
     _collect_static()
 
@@ -188,13 +190,11 @@ def hg_pull():
 
 @task
 def git_pull():
-    puts_blue('== Git Pull  - Baixando aplicação ...', 1, bg=107)
+    puts_blue('== Git Pull - %(branch)s - Baixando aplicação ...' % env, 1, bg=107)
     with cd(env.code_root):
-        with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
-            res = sudo('git checkout -b %(branch)s' % env, user=env.django_user)
-        if 'failed' in res:
-            sudo('git checkout %(branch)s' % env, user=env.django_user)
-        sudo('git pull origin %(branch)s' % env, user=env.django_user)
+        sudo('git fetch' % env, user=env.django_user)
+        sudo('git checkout %(branch)s' % env, user=env.django_user)
+        sudo('git merge origin/%(branch)s' % env, user=env.django_user)
 
 
 @task
@@ -518,4 +518,7 @@ def add_authorized_key(ssh_file='id_rsa.pub', server_ssh__dir='/home/znc/.ssh'):
         puts_red('Não é um arquivo')
 
 
-
+@task
+def drop_template_postgis():
+    sudo("psql -c \"UPDATE pg_database SET datistemplate='false' WHERE datname='template_postgis';\"", user='postgres')
+    sudo("dropdb template_postgis", user='postgres')
