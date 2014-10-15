@@ -190,13 +190,11 @@ def hg_pull():
 
 @task
 def git_pull():
-    puts_blue('== Git Pull  - Baixando aplicação ...', 1, bg=107)
+    puts_blue('== Git Pull - %(branch)s - Baixando aplicação ...' % env, 1, bg=107)
     with cd(env.code_root):
-        with settings(hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
-            res = sudo('git checkout -b %(branch)s' % env, user=env.django_user)
-        if 'failed' in res:
-            sudo('git checkout %(branch)s' % env, user=env.django_user)
-        sudo('git pull origin %(branch)s' % env, user=env.django_user)
+        sudo('git fetch' % env, user=env.django_user)
+        sudo('git checkout %(branch)s' % env, user=env.django_user)
+        sudo('git merge origin/%(branch)s' % env, user=env.django_user)
 
 
 @task
