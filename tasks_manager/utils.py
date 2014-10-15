@@ -480,6 +480,14 @@ def _generate_secret_key():
     return secret_key
 
 
+def _copy_ini_to_config(config):
+    ini = env.proj_ini
+
+    if ini.has_section('COPY_APP'):
+        for op in ini.options('COPY_APP'):
+            config.set('APP', op, ini.get('COPY_APP', op))
+
+
 def _set_manual_config_file(config=None):
     '''
         Seta o arquivo de configuração em
@@ -492,6 +500,8 @@ def _set_manual_config_file(config=None):
     # lê arquivo de configuração
     if not config:
         config = _read_config_file()
+    _copy_ini_to_config(config)
+
     # imprime help do JSON
     puts_blue(u"== Setar variaveis sensiveis ==")
     puts_blue(u"== Entre com um JSON no formato ==")
