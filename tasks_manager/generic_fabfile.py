@@ -96,7 +96,7 @@ def generic_fabfile(env, settings, ini, PROJECT_NAME, PROJECT_DIR, PROD_SETTINGS
         # END gunicorn settings ###
 
         # START nginx settings ###
-        # 'camargocorrea.znc.com.br'  # Only domain name, without 'www' or 'http://'
+        # 'project.com'  # Only domain name, without 'www' or 'http://'
         allowed_hosts = get_config_or('COPY_APP', 'allowed_hosts', default=",".join(settings.ALLOWED_HOSTS))
         env.nginx_server_name = " ".join(allowed_hosts.split(','))
         env.nginx_conf_file = '%(django_user_home)s/configs/nginx/%(project)s.conf' % env

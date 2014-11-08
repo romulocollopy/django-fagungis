@@ -504,13 +504,13 @@ def list_authorized_keys():
 
 
 @task
-def add_authorized_key(ssh_file='id_rsa.pub', server_ssh__dir='/home/znc/.ssh'):
+def add_authorized_key(ssh_file='id_rsa.pub', server_ssh__dir='%(django_user_home)s/.ssh' % env):
     '''
     Adiciona chave SSH ao authorized_keys do servidor
     '''
     puts_blue(ssh_file)
     if isfile(ssh_file):
-        with cd('/home/znc/.ssh/'):
+        with cd(server_ssh__dir):
             put(ssh_file, "temp.pub", use_sudo=True)
             sudo('cat temp.pub >> authorized_keys')
             sudo('rm temp.pub')

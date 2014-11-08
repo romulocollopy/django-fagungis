@@ -15,6 +15,7 @@ CLASSIFIERS = [
     'Programming Language :: Python',
     'Programming Language :: Python :: 2.5',
     'Programming Language :: Python :: 2.6',
+    'Programming Language :: Python :: 2.7',
     'Topic :: Software Development',
     'Topic :: Software Development :: Build Tools',
     'Topic :: Software Development :: Libraries',
@@ -25,15 +26,15 @@ CLASSIFIERS = [
 ]
 
 setup(
-    name="znc_django_deploy",
+    name="django_deploy",
     version=__import__('tasks_manager').get_version(),
-    url='https://bitbucket.org/znc/znc-django-deploy',
-    download_url='https://bitbucket.org/znc/znc-django-deploy/downloads',
+    url='{{ https://github.com/username/repo_name }}',
+    download_url='{{ https://github.com/username/repo_name/download }}',
     license='BSD License',
     description="DJANGO + Fabric + Gunicorn + Nginx + Supervisor deployment",
     long_description=open(os.path.join(os.path.dirname(__file__), 'README.md')).read(),
-    author='ZNC Sistemas',
-    author_email='contato@znc.com.br',
+    author='{{ Your name }}',
+    author_email='{{ contato@domain.com }}',
     keywords='django fabric gunicorn nginx supervisor',
     packages=find_packages(),
     namespace_packages=['tasks_manager'],
